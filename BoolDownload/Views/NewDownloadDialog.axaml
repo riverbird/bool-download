@@ -1,0 +1,40 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:BoolDownload.ViewModels"
+        x:Class="BoolDownload.Views.NewDownloadDialog"
+        x:DataType="vm:NewDownloadViewModel"
+        Title="创建新下载"
+        Width="500"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+    <Design.DataContext>
+        <vm:NewDownloadViewModel />
+    </Design.DataContext>
+
+    <StackPanel Margin="20" Spacing="16">
+        <Grid ColumnDefinitions="90,*" RowDefinitions="Auto,Auto,Auto,Auto"
+              ColumnSpacing="10" RowSpacing="12">
+            <TextBlock Text="下载链接" VerticalAlignment="Center" />
+            <TextBox Grid.Column="1" Text="{Binding Url}"
+                     PlaceholderText="https://example.com/file.zip" />
+            <TextBlock Grid.Row="1" Text="文件名" VerticalAlignment="Center" />
+            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding FileName}"
+                     PlaceholderText="file.zip" />
+            <TextBlock Grid.Row="2" Text="保存位置" VerticalAlignment="Center" />
+            <ComboBox Grid.Row="2" Grid.Column="1"
+                      ItemsSource="{Binding Folders}"
+                      SelectedItem="{Binding SelectedFolder}" />
+            <TextBlock Grid.Row="3" Text="最大连接数" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Row="3" Grid.Column="1"
+                           Minimum="1" Maximum="128" Increment="1"
+                           Value="{Binding MaxConnections}"
+                           HorizontalAlignment="Stretch" />
+        </Grid>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button Content="确定" IsDefault="True" Click="OnOk" />
+            <Button Content="取消" IsCancel="True" Click="OnCancel" />
+        </StackPanel>
+    </StackPanel>
+</Window>

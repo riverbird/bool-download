@@ -1,7 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
 using BoolDownload.ViewModels;
-using System;
 
 namespace BoolDownload.Views;
 
@@ -17,9 +16,11 @@ public partial class MainView : NavigationPage
         base.OnAttachedToVisualTree(e);
 
         if (CurrentPage == null)
+        {
             await PushAsync(new DownloadView()
             {
                 DataContext = new DownloadViewModel()
             });
+        }
     }
 }

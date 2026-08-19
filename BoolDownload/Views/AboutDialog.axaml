@@ -1,0 +1,84 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="BoolDownload.Views.AboutDialog"
+        Title="关于 BoolDownload"
+        Width="560"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+    <StackPanel Margin="24" Spacing="16">
+        <!-- Logo + 软件名称 -->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="12">
+            <Image Source="/Assets/Icon.png" Width="56" Height="56" />
+            <StackPanel VerticalAlignment="Center" Spacing="2">
+                <TextBlock Text="BoolDownload" FontSize="26" FontWeight="SemiBold" />
+                <TextBlock x:Name="VersionText" FontSize="12" Foreground="Gray" />
+            </StackPanel>
+        </StackPanel>
+
+        <TabControl>
+            <!-- 软件信息 / 系统运行环境 -->
+            <TabItem Header="软件信息">
+                <StackPanel Margin="0,8,0,0" Spacing="4">
+                    <TextBlock FontSize="15" FontWeight="SemiBold" Text="软件信息" />
+                    <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+                          ColumnSpacing="8" RowSpacing="4" Margin="0,4,0,8">
+                        <TextBlock Grid.Row="0" Text="产品名称" Foreground="Gray" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="BoolDownload" />
+                        <TextBlock Grid.Row="1" Text="版本" Foreground="Gray" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" x:Name="SoftwareVersionText" />
+                        <TextBlock Grid.Row="2" Text="版权" Foreground="Gray" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" x:Name="CopyrightText" />
+                        <TextBlock Grid.Row="3" Text="许可证" Foreground="Gray" />
+                        <TextBlock Grid.Row="3" Grid.Column="1" x:Name="LicenseText" />
+                        <TextBlock Grid.Row="4" Text="引擎" Foreground="Gray" />
+                        <TextBlock Grid.Row="4" Grid.Column="1" x:Name="EngineText" />
+                    </Grid>
+
+                    <Separator />
+
+                    <TextBlock FontSize="15" FontWeight="SemiBold" Text="系统运行环境" />
+                    <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+                          ColumnSpacing="8" RowSpacing="4" Margin="0,4,0,0">
+                        <TextBlock Grid.Row="0" Text="操作系统" Foreground="Gray" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" x:Name="OsText" />
+                        <TextBlock Grid.Row="1" Text=".NET 运行时" Foreground="Gray" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" x:Name="RuntimeText" />
+                        <TextBlock Grid.Row="2" Text="体系结构" Foreground="Gray" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" x:Name="ArchitectureText" />
+                        <TextBlock Grid.Row="3" Text="工作目录" Foreground="Gray" />
+                        <TextBlock Grid.Row="3" Grid.Column="1" x:Name="BaseDirectoryText" TextWrapping="Wrap" />
+                    </Grid>
+                </StackPanel>
+            </TabItem>
+
+            <!-- Release Note -->
+            <TabItem Header="Release Note">
+                <TextBox IsReadOnly="True"
+                         AcceptsReturn="True"
+                         TextWrapping="Wrap"
+                         Height="260"
+                         Margin="0,8,0,0">
+                    BoolDownload 1.0.0
+                    ================
+
+                    基于 Avalonia 12 构建的跨平台下载管理工具,集成迅雷开放下载引擎(Xunlei Open Download SDK),
+                    支持多渠道断点续传下载。
+
+
+                    2026-08-19 v1.0.0
+                    -----------------
+                    - 完成基础界面:顶部菜单栏、状态分类侧栏、下载列表(DataGrid)及工具栏。
+                    - 新增"新建下载"对话框,支持设置下载链接、文件名、保存位置与最大连接数。
+                    - 集成迅雷开放下载引擎,支持任务创建、启动、暂停、删除与进度轮询。
+                    - 左侧分类列表支持按状态过滤下载项。
+                    - 新增"文件 > 退出"退出应用程序。
+                    - 新增"帮助 > 关于"关于对话框(软件信息 / 系统运行环境 / Release Note)。
+                    - 顶部标题栏左侧显示应用程序 Logo。
+                </TextBox>
+            </TabItem>
+        </TabControl>
+
+        <Button Content="确定" IsDefault="True" HorizontalAlignment="Center" MinWidth="100" Click="OnOk" />
+    </StackPanel>
+</Window>
