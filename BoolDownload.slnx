@@ -1,0 +1,11 @@
+﻿<Solution>
+  <Project Path="BoolDownload.Android/BoolDownload.Android.csproj">
+    <Deploy />
+  </Project>
+  <Project Path="BoolDownload.Browser/BoolDownload.Browser.csproj" />
+  <Project Path="BoolDownload.Desktop/BoolDownload.Desktop.csproj" />
+  <Project Path="BoolDownload.iOS/BoolDownload.iOS.csproj">
+    <Deploy />
+  </Project>
+  <Project Path="BoolDownload/BoolDownload.csproj" />
+</Solution>
