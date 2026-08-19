@@ -13,6 +13,7 @@
 
     <ItemGroup>
         <PackageReference Include="Avalonia.Desktop"/>
+        <PackageReference Include="FluentIcons.Resources.Avalonia" />
     </ItemGroup>
 
     <ItemGroup>

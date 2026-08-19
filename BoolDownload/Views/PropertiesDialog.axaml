@@ -1,0 +1,35 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:BoolDownload.ViewModels"
+        x:Class="BoolDownload.Views.PropertiesDialog"
+        x:DataType="vm:PropertiesViewModel"
+        Title="属性"
+        Width="500"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+    <Design.DataContext>
+        <vm:PropertiesViewModel Url="https://example.com/file.zip"
+                                FileName="file.zip"
+                                SavePath="/home/user/Downloads"
+                                MaxConnections="16" />
+    </Design.DataContext>
+
+    <StackPanel Margin="20" Spacing="16">
+        <Grid ColumnDefinitions="90,*" RowDefinitions="Auto,Auto,Auto,Auto"
+              ColumnSpacing="10" RowSpacing="12">
+            <TextBlock Text="下载链接" VerticalAlignment="Center" />
+            <TextBox Grid.Column="1" Text="{Binding Url}" IsReadOnly="True" />
+            <TextBlock Grid.Row="1" Text="文件名" VerticalAlignment="Center" />
+            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding FileName}" IsReadOnly="True" />
+            <TextBlock Grid.Row="2" Text="保存位置" VerticalAlignment="Center" />
+            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding SavePath}" IsReadOnly="True" />
+            <TextBlock Grid.Row="3" Text="最大连接数" VerticalAlignment="Center" />
+            <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding MaxConnections}" IsReadOnly="True" />
+        </Grid>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button Content="确定" IsDefault="True" Click="OnOk" />
+        </StackPanel>
+    </StackPanel>
+</Window>
