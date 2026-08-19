@@ -6,6 +6,7 @@
              xmlns:ic="using:FluentIcons.Avalonia"
              mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="600"
              NavigationPage.HasBackButton="False"
+             x:Name="Root"
              x:DataType="vm:DownloadViewModel"
              x:Class="BoolDownload.Views.DownloadView">
     <ContentPage.Header>
@@ -30,7 +31,7 @@
                 <MenuItem Header="退出" Click="OnExit" />
             </MenuItem>
             <MenuItem Header="工具">
-                <MenuItem Header="选项" />
+                <MenuItem Header="选项" Click="OnOptions" />
             </MenuItem>
             <MenuItem Header="帮助">
                 <MenuItem Header="关于" Click="OnAbout" />
@@ -126,7 +127,18 @@
                       CanUserSortColumns="True"
                       SelectionMode="Single"
                       RowHeight="40"
+                      CellPointerPressed="OnCellsPointerPressed"
                       VerticalScrollBarVisibility="Visible">
+                <DataGrid.ContextMenu>
+                    <ContextMenu DataContext="{Binding DataContext, ElementName=Root}">
+                        <MenuItem Header="删除" Command="{Binding DeleteCommand}" />
+                        <MenuItem Header="打开保存文件夹" Command="{Binding OpenSaveFolderCommand}" />
+                        <MenuItem Header="开始" Command="{Binding StartCommand}" />
+                        <MenuItem Header="暂停" Command="{Binding PauseCommand}" />
+                        <Separator />
+                        <MenuItem Header="属性" Command="{Binding PropertiesCommand}" />
+                    </ContextMenu>
+                </DataGrid.ContextMenu>
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="状态" Binding="{Binding Status}" Width="100" />
                     <DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="*" />

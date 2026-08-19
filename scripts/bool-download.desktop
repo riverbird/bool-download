@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=BoolDownload
+Name[zh_CN]=布尔下载
+Comment=Bool Download Linux Version (Linux Build)
+Exec=/usr/local/bool-download/BoolDownload.Desktop
+Icon=/usr/local/bool-download/Icon.png
+Terminal=false
+Type=Application
+Categories=Internet;
+

@@ -13,6 +13,16 @@ public partial class DownloadView : ContentPage
         InitializeComponent();
     }
 
+    private void OnCellsPointerPressed(object? sender, DataGridCellPointerPressedEventArgs e)
+    {
+        if (e.PointerPressedEventArgs.GetCurrentPoint(this).Properties.IsRightButtonPressed
+            && e.Row.DataContext is DownloadItem item
+            && DataContext is DownloadViewModel vm)
+        {
+            vm.SelectedItem = item;
+        }
+    }
+
     private void OnExit(object? sender, RoutedEventArgs e)
     {
         if (DataContext is DownloadViewModel vm) vm.Save();
@@ -24,5 +34,11 @@ public partial class DownloadView : ContentPage
     {
         if (TopLevel.GetTopLevel(this) is Window owner)
             new AboutDialog().ShowDialog(owner);
+    }
+
+    private void OnOptions(object? sender, RoutedEventArgs e)
+    {
+        if (TopLevel.GetTopLevel(this) is Window owner)
+            new OptionsDialog().ShowDialog(owner);
     }
 }

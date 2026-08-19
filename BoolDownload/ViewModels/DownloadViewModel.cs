@@ -11,6 +11,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunlei.XlDl;
@@ -312,6 +314,60 @@ public partial class DownloadViewModel : ViewModelBase
 
         var dialog = new PropertiesDialog { DataContext = new PropertiesViewModel(item) };
         await dialog.ShowDialog(owner);
+    }
+
+    [RelayCommand]
+    private void OpenSaveFolder()
+    {
+        if (SelectedItem is not { } item) return;
+
+        var directory = item.SavePath;
+        if (string.IsNullOrWhiteSpace(directory) || !Directory.Exists(directory)) return;
+
+        var filePath = Path.Combine(directory, item.Name);
+        var selectFile = File.Exists(filePath) || Directory.Exists(filePath);
+        if (!selectFile)
+        {
+            var matched = Directory.EnumerateFiles(directory)
+                .FirstOrDefault(f => Path.GetFileName(f).StartsWith(item.Name, StringComparison.OrdinalIgnoreCase));
+            if (matched is not null)
+            {
+                filePath = matched;
+                selectFile = true;
+            }
+        }
+
+        if (OperatingSystem.IsWindows())
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                UseShellExecute = true,
+                Arguments = selectFile ? $"/select,\"{filePath}\"" : $"\"{directory}\"",
+            });
+        }
+        else if (OperatingSystem.IsMacOS())
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "open",
+                UseShellExecute = true,
+                Arguments = selectFile ? $"-R \"{filePath}\"" : $"\"{directory}\"",
+            });
+        }
+        else
+        {
+            var fileUri = (selectFile ? new Uri(filePath) : new Uri(directory)).AbsoluteUri;
+            var directoryUri = new Uri(directory).AbsoluteUri;
+            var psi = new ProcessStartInfo("bash") { UseShellExecute = false };
+            psi.ArgumentList.Add("-c");
+            psi.ArgumentList.Add(
+                $"(dbus-send --session --dest=org.freedesktop.FileManager1 --type=method_call " +
+                $"/org/freedesktop/FileManager1 org.freedesktop.FileManager1.ShowItems " +
+                $"array:string:\"{fileUri}\" string:\"\" >/dev/null 2>&1) || " +
+                $"xdg-open \"{directoryUri}\" >/dev/null 2>&1 &");
+            Process.Start(psi);
+        }
     }
 
     private static bool IsDownloading(DownloadItem item) =>

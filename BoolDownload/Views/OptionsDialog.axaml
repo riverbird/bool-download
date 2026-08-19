@@ -1,0 +1,19 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="BoolDownload.Views.OptionsDialog"
+        Title="选项"
+        Width="320"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+    <StackPanel Margin="24" Spacing="20">
+        <TextBlock Text="敬请期待"
+                   FontSize="14"
+                   HorizontalAlignment="Center" />
+        <Button Content="确定"
+                IsDefault="True"
+                MinWidth="100"
+                HorizontalAlignment="Center"
+                Click="OnOk" />
+    </StackPanel>
+</Window>

@@ -53,29 +53,13 @@
             </TabItem>
 
             <!-- Release Note -->
-            <TabItem Header="Release Note">
-                <TextBox IsReadOnly="True"
+            <TabItem Header="更新日志">
+                <TextBox x:Name="ReleaseNoteText"
+                         IsReadOnly="True"
                          AcceptsReturn="True"
                          TextWrapping="Wrap"
                          Height="260"
-                         Margin="0,8,0,0">
-                    BoolDownload 1.0.0
-                    ================
-
-                    基于 Avalonia 12 构建的跨平台下载管理工具,集成迅雷开放下载引擎(Xunlei Open Download SDK),
-                    支持多渠道断点续传下载。
-
-
-                    2026-08-19 v1.0.0
-                    -----------------
-                    - 完成基础界面:顶部菜单栏、状态分类侧栏、下载列表(DataGrid)及工具栏。
-                    - 新增"新建下载"对话框,支持设置下载链接、文件名、保存位置与最大连接数。
-                    - 集成迅雷开放下载引擎,支持任务创建、启动、暂停、删除与进度轮询。
-                    - 左侧分类列表支持按状态过滤下载项。
-                    - 新增"文件 > 退出"退出应用程序。
-                    - 新增"帮助 > 关于"关于对话框(软件信息 / 系统运行环境 / Release Note)。
-                    - 顶部标题栏左侧显示应用程序 Logo。
-                </TextBox>
+                         Margin="0,8,0,0" />
             </TabItem>
         </TabControl>
 
