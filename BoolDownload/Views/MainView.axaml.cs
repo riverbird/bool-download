@@ -17,9 +17,9 @@ public partial class MainView : NavigationPage
         base.OnAttachedToVisualTree(e);
 
         if (CurrentPage == null)
-            await PushAsync(new HomeView()
+            await PushAsync(new DownloadView()
             {
-                DataContext = new HomeViewModel()
+                DataContext = new DownloadViewModel()
             });
     }
 }

@@ -18,4 +18,5 @@
     <ItemGroup>
         <ProjectReference Include="..\BoolDownload\BoolDownload.csproj"/>
     </ItemGroup>
+
 </Project>
