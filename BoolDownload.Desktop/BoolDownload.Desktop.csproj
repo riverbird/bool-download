@@ -4,6 +4,7 @@
         <!--If you are willing to use platform-specific APIs, use conditional compilation.
         See https://docs.avaloniaui.net/docs/guides/platforms/platform-specific-code/dotnet for more details.-->
         <TargetFramework>net10.0</TargetFramework>
+        <ApplicationIcon>../BoolDownload/Assets/avalonia-logo.ico</ApplicationIcon>
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
@@ -14,6 +15,11 @@
     <ItemGroup>
         <PackageReference Include="Avalonia.Desktop"/>
         <PackageReference Include="FluentIcons.Resources.Avalonia" />
+        <PackageReference Include="Xunlei.Open.DlSdk" />
+        <PackageReference Include="Xunlei.Open.DlSdk.Native.linux-x64" />
+        <PackageReference Include="Xunlei.Open.DlSdk.Native.osx-universal" />
+        <PackageReference Include="Xunlei.Open.DlSdk.Native.win-x64" />
+        <PackageReference Include="Xunlei.Open.DlSdk.Native.win-x86" />
     </ItemGroup>
 
     <ItemGroup>

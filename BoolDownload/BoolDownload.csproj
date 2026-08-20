@@ -22,6 +22,9 @@
         <PackageReference Include="FluentIcons.Avalonia"/>
         <PackageReference Include="Xunlei.Open.DlSdk" />
         <PackageReference Include="Xunlei.Open.DlSdk.Native.linux-x64" />
+        <PackageReference Include="Xunlei.Open.DlSdk.Native.osx-universal" />
+        <PackageReference Include="Xunlei.Open.DlSdk.Native.win-x64" />
+        <PackageReference Include="Xunlei.Open.DlSdk.Native.win-x86" />
     </ItemGroup>
 
 </Project>
