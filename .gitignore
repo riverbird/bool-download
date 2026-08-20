@@ -474,3 +474,4 @@ $RECYCLE.BIN/
 !.vscode/extensions.json
 >>>>>>> 6bca615 (Initial commit.)
 /installer/output
+*.deb
