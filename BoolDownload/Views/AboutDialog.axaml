@@ -17,7 +17,7 @@
         </StackPanel>
 
         <TabControl>
-            <!-- 软件信息 / 系统运行环境 -->
+            <!-- 软件信息 / 第三方库 / 系统运行环境 -->
             <TabItem Header="软件信息">
                 <StackPanel Margin="0,8,0,0" Spacing="4">
                     <TextBlock FontSize="15" FontWeight="SemiBold" Text="软件信息" />
@@ -37,8 +37,24 @@
 
                     <Separator />
 
+                    <!-- 第三方库及版本 -->
+                    <TextBlock FontSize="15" FontWeight="SemiBold" Text="第三方库" />
+                    <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto"
+                          ColumnSpacing="8" RowSpacing="4" Margin="0,4,0,8">
+                        <TextBlock Grid.Row="0" Text="Avalonia" Foreground="Gray" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" x:Name="AvaloniaVersionText" />
+                        <TextBlock Grid.Row="1" Text="Xunlei.Open.DlSdk" Foreground="Gray" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" x:Name="XunleiSdkVersionText" />
+                        <TextBlock Grid.Row="2" Text="Downloader" Foreground="Gray" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" x:Name="DownloaderVersionText" />
+                        <TextBlock Grid.Row="3" Text="MonoTorrent" Foreground="Gray" />
+                        <TextBlock Grid.Row="3" Grid.Column="1" x:Name="MonoTorrentVersionText" />
+                    </Grid>
+
+                    <Separator />
+
                     <TextBlock FontSize="15" FontWeight="SemiBold" Text="系统运行环境" />
-                    <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+                    <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto,Auto,Auto"
                           ColumnSpacing="8" RowSpacing="4" Margin="0,4,0,0">
                         <TextBlock Grid.Row="0" Text="操作系统" Foreground="Gray" />
                         <TextBlock Grid.Row="0" Grid.Column="1" x:Name="OsText" />

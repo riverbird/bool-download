@@ -19,6 +19,7 @@ using Xunlei.XlDl;
 
 namespace BoolDownload.ViewModels;
 
+/// <summary>侧栏状态分类项。</summary>
 public partial class StatusItem : ViewModelBase
 {
     [ObservableProperty] public partial string Name { get; set; }
@@ -48,6 +49,7 @@ public partial class DownloadViewModel : ViewModelBase
     private readonly Dictionary<ulong, DownloadItem> _activeTasks = new();
     private readonly Dictionary<DownloadItem, NativeDownload> _nativeDownloads = new();
     private readonly Dictionary<DownloadItem, DownloaderDownload> _downloaderDownloads = new();
+    private readonly Dictionary<DownloadItem, MagnetLinkDownload> _magnetDownloads = new();
     private DispatcherTimer? _timer;
 
     public ObservableCollection<StatusItem> StatusItems { get; } = new()
@@ -140,6 +142,12 @@ public partial class DownloadViewModel : ViewModelBase
                 if (item.Engine == DownloadEngine.Downloader)
                 {
                     ResumeDownloaderDownload(item);
+                    continue;
+                }
+
+                if (item.Engine == DownloadEngine.Magnet)
+                {
+                    ResumeMagnetDownload(item);
                     continue;
                 }
 
@@ -302,6 +310,44 @@ public partial class DownloadViewModel : ViewModelBase
         }
     }
 
+    /// <summary>弹出“创建磁力链接下载”对话框，确认后创建并开始磁力链接下载任务。</summary>
+    [RelayCommand]
+    private async Task NewMagnetLink()
+    {
+        var owner = GetMainWindow();
+        if (owner is null) return;
+
+        var dialogVm = new NewMagnetLinkViewModel();
+        var dialog = new NewMagnetLinkDialog { DataContext = dialogVm };
+        var ok = await dialog.ShowDialog<bool>(owner);
+        if (!ok) return;
+
+        if (string.IsNullOrWhiteSpace(dialogVm.SelectedFolder)) return;
+
+        var item = new DownloadItem
+        {
+            Status = "创建中",
+            Name = string.IsNullOrWhiteSpace(dialogVm.FileName) ? "磁力链接任务" : dialogVm.FileName,
+            Url = dialogVm.MagnetUrl.Trim(),
+            SavePath = dialogVm.SelectedFolder,
+            Done = "0 B",
+            Size = "",
+            Progress = 0,
+            AddedTime = DateTime.Now,
+            MaxConnections = (int)dialogVm.MaxConnections,
+            Engine = DownloadEngine.Magnet,
+        };
+        item.PropertyChanged += OnDownloadItemChanged;
+        Items.Add(item);
+        Refresh();
+        Save();
+
+        // 磁力链接引擎（MonoTorrent）：名称留空时由种子元数据决定。
+        StartMagnetDownload(item, dialogVm.SelectedFolder,
+            string.IsNullOrWhiteSpace(dialogVm.FileName) ? null : dialogVm.FileName,
+            (int)dialogVm.MaxConnections);
+    }
+
     [RelayCommand(CanExecute = nameof(CanStart))]
     private void Start()
     {
@@ -330,6 +376,19 @@ public partial class DownloadViewModel : ViewModelBase
             return;
         }
 
+        if (item.Engine == DownloadEngine.Magnet)
+        {
+            if (_magnetDownloads.TryGetValue(item, out var magnet))
+            {
+                if (magnet.State == NativeDownloadState.Paused)
+                    magnet.Resume();
+                else
+                    magnet.Start();
+                item.Status = "下载中";
+            }
+            return;
+        }
+
         if (item.TaskId > 0)
             _service.StartTask(item.TaskId);
     }
@@ -343,6 +402,9 @@ public partial class DownloadViewModel : ViewModelBase
         if (item.Engine == DownloadEngine.Downloader)
             return _downloaderDownloads.TryGetValue(item, out var downloader) &&
                    downloader.State == NativeDownloadState.Paused;
+        if (item.Engine == DownloadEngine.Magnet)
+            return _magnetDownloads.TryGetValue(item, out var magnet) &&
+                   magnet.State == NativeDownloadState.Paused;
         return IsPaused(item);
     }
 
@@ -365,6 +427,13 @@ public partial class DownloadViewModel : ViewModelBase
             return;
         }
 
+        if (item.Engine == DownloadEngine.Magnet)
+        {
+            if (_magnetDownloads.TryGetValue(item, out var magnet))
+                magnet.Pause();
+            return;
+        }
+
         if (item.TaskId > 0)
             _service.StopTask(item.TaskId);
     }
@@ -378,6 +447,9 @@ public partial class DownloadViewModel : ViewModelBase
         if (item.Engine == DownloadEngine.Downloader)
             return _downloaderDownloads.TryGetValue(item, out var downloader) &&
                    downloader.State == NativeDownloadState.Downloading;
+        if (item.Engine == DownloadEngine.Magnet)
+            return _magnetDownloads.TryGetValue(item, out var magnet) &&
+                   magnet.State == NativeDownloadState.Downloading;
         return IsDownloading(item);
     }
 
@@ -437,6 +509,28 @@ public partial class DownloadViewModel : ViewModelBase
             return;
         }
 
+        if (item.Engine == DownloadEngine.Magnet)
+        {
+            if (_magnetDownloads.TryGetValue(item, out var magnet))
+            {
+                _magnetDownloads.Remove(item);
+                await magnet.DeleteAsync(deleteFile: true);
+                magnet.Dispose();
+            }
+            else
+            {
+                // 任务已完成后对象被释放，直接清理残留文件。
+                DeleteMagnetFiles(item, deleteFinal: true);
+            }
+
+            item.PropertyChanged -= OnDownloadItemChanged;
+            Items.Remove(item);
+            Refresh();
+            RefreshCommandStates();
+            Save();
+            return;
+        }
+
         _service.DeleteTask(item.TaskId, deleteFile: true);
         _activeTasks.Remove(item.TaskId);
         item.PropertyChanged -= OnDownloadItemChanged;
@@ -476,6 +570,15 @@ public partial class DownloadViewModel : ViewModelBase
                     downloader.Dispose();
                 }
             }
+            else if (item.Engine == DownloadEngine.Magnet)
+            {
+                if (_magnetDownloads.TryGetValue(item, out var magnet))
+                {
+                    _magnetDownloads.Remove(item);
+                    magnet.Pause();
+                    magnet.Dispose();
+                }
+            }
             else
             {
                 _activeTasks.Remove(item.TaskId);
@@ -506,6 +609,14 @@ public partial class DownloadViewModel : ViewModelBase
                 {
                     downloader.Pause();
                     _downloaderDownloads.Remove(item);
+                }
+            }
+            else if (item.Engine == DownloadEngine.Magnet)
+            {
+                if (_magnetDownloads.TryGetValue(item, out var magnet))
+                {
+                    magnet.Pause();
+                    _magnetDownloads.Remove(item);
                 }
             }
             else if (item.TaskId > 0)
@@ -753,6 +864,131 @@ public partial class DownloadViewModel : ViewModelBase
         }
     }
 
+    /// <summary>使用磁力链接引擎（MonoTorrent）创建并开始一个下载任务。</summary>
+    private void StartMagnetDownload(DownloadItem item, string directory, string? preferredName, int maxConnections)
+    {
+        try
+        {
+            var download = new MagnetLinkDownload(item.Url, directory, preferredName, maxConnections);
+            _magnetDownloads[item] = download;
+            download.ProgressChanged += (_, p) => OnMagnetProgress(item, p);
+            download.Completed += (_, _) => OnMagnetCompleted(download, item);
+            item.Status = "下载中";
+            download.Start();
+            Save();
+        }
+        catch (Exception)
+        {
+            item.Status = "下载失败";
+        }
+    }
+
+    /// <summary>应用启动时恢复磁力链接下载任务（断点续传，metadata 与已下载数据自动复用）。</summary>
+    private void ResumeMagnetDownload(DownloadItem item)
+    {
+        try
+        {
+            var download = new MagnetLinkDownload(item.Url, item.SavePath, item.Name, Math.Max(1, item.MaxConnections));
+            _magnetDownloads[item] = download;
+            download.ProgressChanged += (_, p) => OnMagnetProgress(item, p);
+            download.Completed += (_, _) => OnMagnetCompleted(download, item);
+            item.Status = "等待";
+            download.Start();
+        }
+        catch (Exception)
+        {
+            item.Status = "恢复失败";
+        }
+    }
+
+    /// <summary>磁力链接下载进度上报（后台线程触发，统一切换到 UI 线程更新界面）。</summary>
+    private void OnMagnetProgress(DownloadItem item, NativeDownloadProgress progress)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (!Items.Contains(item)) return;
+            // 任务已被移入回收站：不再更新其进度。
+            if (item.Status == "已删除") return;
+
+            item.Size = FormatBytes((ulong)Math.Max(0, progress.TotalBytes));
+            item.Done = FormatBytes((ulong)Math.Max(0, progress.DownloadedBytes));
+            if (progress.TotalBytes > 0)
+                item.Progress = (double)progress.DownloadedBytes / progress.TotalBytes * 100;
+            if (item.Status is "创建中" or "等待")
+                item.Status = "下载中";
+
+            DownloadSpeed = FormatSpeed((ulong)Math.Max(0, progress.Speed));
+            TrySaveProgress();
+        });
+    }
+
+    /// <summary>磁力链接下载结束（完成/暂停/失败）处理（后台线程触发，统一切换到 UI 线程更新界面）。</summary>
+    private void OnMagnetCompleted(MagnetLinkDownload download, DownloadItem item)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (!Items.Contains(item)) return;
+
+            // 任务已被移入回收站：不覆盖其状态，仅释放下载对象。
+            if (item.Status == "已删除")
+            {
+                _magnetDownloads.Remove(item);
+                download.Dispose();
+                return;
+            }
+
+            switch (download.State)
+            {
+                case NativeDownloadState.Completed:
+                    item.Size = FormatBytes((ulong)Math.Max(0, download.TotalBytes));
+                    item.Done = item.Size;
+                    item.Progress = 100;
+                    item.Status = "已完成";
+                    // 磁力链接任务名以种子元数据中的真实名称为准。
+                    if (!string.IsNullOrWhiteSpace(download.Name))
+                        item.Name = download.Name;
+                    _magnetDownloads.Remove(item);
+                    download.Dispose();
+                    break;
+                case NativeDownloadState.Paused:
+                    item.Status = "已暂停";
+                    break;
+                default:
+                    item.Status = "下载失败";
+                    break;
+            }
+
+            // 所有任务均不在下载时，下载速度置 0。
+            if (!Items.Any(IsActiveDownload))
+                DownloadSpeed = "0 B/s";
+
+            Refresh();
+            RefreshCommandStates();
+            Save();
+        });
+    }
+
+    /// <summary>清理磁力链接下载的残留文件与最终文件（种子名目录或单文件）。</summary>
+    private static void DeleteMagnetFiles(DownloadItem item, bool deleteFinal)
+    {
+        try
+        {
+            // MonoTorrent 下载内容位于 保存目录/种子名 目录（多文件）或文件（单文件）。
+            var target = Path.Combine(item.SavePath, item.Name);
+            if (deleteFinal)
+            {
+                if (Directory.Exists(target))
+                    Directory.Delete(target, recursive: true);
+                else if (File.Exists(target))
+                    File.Delete(target);
+            }
+        }
+        catch
+        {
+            // Ignore cleanup failures.
+        }
+    }
+
     [RelayCommand]
     private async Task Properties()
     {
@@ -773,7 +1009,8 @@ public partial class DownloadViewModel : ViewModelBase
         if (item.Status != "已完成") return;
 
         var filePath = Path.Combine(item.SavePath, item.Name);
-        if (!File.Exists(filePath)) return;
+        // 磁力链接任务下载完成的内容可能是单文件或多文件目录，两者均可系统默认方式打开。
+        if (!File.Exists(filePath) && !Directory.Exists(filePath)) return;
 
         try
         {

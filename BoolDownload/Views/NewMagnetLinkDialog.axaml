@@ -1,0 +1,57 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:BoolDownload.ViewModels"
+        xmlns:ic="using:FluentIcons.Avalonia"
+        x:Class="BoolDownload.Views.NewMagnetLinkDialog"
+        x:DataType="vm:NewMagnetLinkViewModel"
+        Title="创建磁力链接下载"
+        Width="520"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+    <Design.DataContext>
+        <vm:NewMagnetLinkViewModel />
+    </Design.DataContext>
+
+    <StackPanel Margin="20" Spacing="16">
+        <Grid ColumnDefinitions="90,*" RowDefinitions="Auto,Auto,Auto,Auto"
+              ColumnSpacing="10" RowSpacing="12">
+            <TextBlock Text="磁力链接" VerticalAlignment="Center" />
+            <TextBox Grid.Column="1" Text="{Binding MagnetUrl}"
+                     PlaceholderText="magnet:?xt=urn:btih:..." />
+            <TextBlock Grid.Row="1" Text="任务名称" VerticalAlignment="Center" />
+            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding FileName}"
+                     PlaceholderText="留空自动从种子元数据获取" />
+            <TextBlock Grid.Row="2" Text="保存位置" VerticalAlignment="Center" />
+            <Grid Grid.Row="2" Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <ComboBox ItemsSource="{Binding Folders}"
+                          SelectedItem="{Binding SelectedFolder}" />
+                <Button Grid.Column="1" Click="OnBrowseFolder"
+                        ToolTip.Tip="选择保存位置" Padding="10,6"
+                        VerticalAlignment="Stretch">
+                    <ic:FluentIcon Icon="FolderOpen" IconVariant="Regular" FontSize="16" />
+                </Button>
+            </Grid>
+            <TextBlock Grid.Row="3" Text="最大连接数" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Row="3" Grid.Column="1"
+                           Minimum="1" Maximum="300" Increment="1"
+                           Value="{Binding MaxConnections}"
+                           HorizontalAlignment="Stretch" />
+        </Grid>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button IsDefault="True" Click="OnOk" Padding="16,6">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <ic:FluentIcon Icon="Checkmark" IconVariant="Regular" FontSize="14" VerticalAlignment="Center" />
+                    <TextBlock Text="确定" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+            <Button IsCancel="True" Click="OnCancel" Padding="16,6">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <ic:FluentIcon Icon="Dismiss" IconVariant="Regular" FontSize="14" VerticalAlignment="Center" />
+                    <TextBlock Text="取消" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+        </StackPanel>
+    </StackPanel>
+</Window>

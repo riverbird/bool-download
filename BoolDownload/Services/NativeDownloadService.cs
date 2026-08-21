@@ -21,6 +21,9 @@ public enum DownloadEngine
 
     /// <summary>原生下载引擎（Downloader 包）。</summary>
     Downloader = 2,
+
+    /// <summary>磁力链接下载引擎（MonoTorrent 包）。</summary>
+    Magnet = 3,
 }
 
 /// <summary>原生下载任务状态。</summary>

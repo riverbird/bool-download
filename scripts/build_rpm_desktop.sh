@@ -13,7 +13,7 @@ cp /home/hunter/project/bool-download/scripts/bool-download.desktop /home/hunter
 echo "开始打包..."
 fpm -s dir -t rpm \
   -n BoolDownload \
-  -v 1.0.0 \
+  -v 1.1.0 \
   --iteration 1.el7 \
   --prefix / \
   --description "基于迅雷下载引擎开发的跨平台下载工具。" \

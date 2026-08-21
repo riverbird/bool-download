@@ -19,6 +19,7 @@
     <PackageVersion Include="Downloader" Version="5.9.5" />
     <PackageVersion Include="FluentIcons.Avalonia" Version="2.1.337" />
     <PackageVersion Include="FluentIcons.Resources.Avalonia" Version="2.1.337" />
+    <PackageVersion Include="MonoTorrent" Version="3.0.2" />
     <PackageVersion Include="Xamarin.AndroidX.Core.SplashScreen" Version="1.0.1.15" />
     <PackageVersion Include="Xunlei.Open.DlSdk" Version="1.0.3" />
     <PackageVersion Include="Xunlei.Open.DlSdk.Native.linux-x64" Version="1.0.3" />
