@@ -17,6 +17,7 @@ public sealed class SavedDownloadTask
     public string SavePath { get; set; } = string.Empty;
     public ulong TaskId { get; set; }
     public int MaxConnections { get; set; }
+    public DownloadEngine Engine { get; set; }
 }
 
 public static class DownloadTaskStore

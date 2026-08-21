@@ -14,6 +14,7 @@
 
     <ItemGroup>
         <PackageReference Include="Avalonia.Desktop"/>
+        <PackageReference Include="Downloader" />
         <PackageReference Include="FluentIcons.Resources.Avalonia" />
         <PackageReference Include="Xunlei.Open.DlSdk" />
         <PackageReference Include="Xunlei.Open.DlSdk.Native.linux-x64" />
