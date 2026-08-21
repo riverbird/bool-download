@@ -12,8 +12,8 @@ cp /home/riverbird/project/bool-download/scripts/bool-download.desktop /home/riv
 
 echo "开始打包..."
 fpm -s dir -t deb \
-  -n booldownload \
-  -v 1.0.0 \
+  -n boolldownload \
+  -v 1.1.0 \
   --iteration 1.el7 \
   --prefix / \
   --description "基于迅雷下载引擎开发的跨平台下载工具。" \
