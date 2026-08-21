@@ -9,7 +9,8 @@ namespace BoolDownload.Services;
 
 /// <summary>
 /// 基于 Downloader 包（https://www.nuget.org/packages/Downloader）实现的下载引擎任务。
-/// 通过 ChunkCount + RangeDownload 实现分段并行下载（按“最大连接数”分段），
+/// 通过 ChunkCount 实现分段并行下载（按“最大连接数”分段；服务端支持 Range 时并行分块，
+/// 不支持时由库内部自动降级为单连接下载，与 HttpClient 引擎行为一致），
 /// 通过 EnableAutoResumeDownload（.download 包文件）实现断点续传，
 /// 支持暂停 / 恢复。全程不接触 UI 线程，进度通过事件上报，由调用方负责切换到 UI 线程。
 /// </summary>
@@ -51,10 +52,19 @@ public sealed class DownloaderDownload : IDisposable
         {
             ChunkCount = Math.Clamp(segmentCount, 1, 128),
             ParallelDownload = true,
-            RangeDownload = true,
+            // 注意：不能开启 RangeDownload = true。
+            // Downloader 库在 RangeDownload=true 且服务端探测（Range: bytes=0-0）未返回
+            // Content-Range 头（例如服务端忽略 Range、响应带 Content-Encoding、或返回
+            // Accept-Ranges: none）时，会直接抛出 NotSupportedException 导致每次下载都失败。
+            // 关闭后：服务端支持 Range 时仍会按 ChunkCount 分块并行下载；
+            // 不支持 Range 时库内部自动降级为单连接下载（与 HttpClient 引擎行为一致）。
+            RangeDownload = false,
             EnableAutoResumeDownload = true,
             MaxTryAgainOnFailure = 3,
             BufferBlockSize = 81920, // 80 KB
+            // 默认 BlockTimeout 仅 5 秒，慢速/不稳定网络下单次读流超过 5s 就会
+            // TaskCanceledException，重试 3 次后下载失败；放宽到 60 秒更稳健。
+            BlockTimeout = 60000,
             CheckDiskSizeBeforeDownload = false,
         };
 
@@ -159,7 +169,9 @@ public sealed class DownloaderDownload : IDisposable
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
 
-            using var stream = await _download.StartAsync();
+            // DownloadBuilder 流程下 StartAsync() 直接写文件，返回的是 Stream.Null，
+            // 无需（也不应）消费返回的流。
+            await _download.StartAsync();
         }
         catch (Exception ex)
         {
@@ -183,8 +195,8 @@ public sealed class DownloaderDownload : IDisposable
         _lastReportUtc = now;
 
         ProgressChanged?.Invoke(this, new NativeDownloadProgress(
-            TotalBytes,
             DownloadedBytes,
+            TotalBytes,
             (long)e.BytesPerSecondSpeed));
     }
 

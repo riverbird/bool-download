@@ -475,3 +475,4 @@ $RECYCLE.BIN/
 >>>>>>> 6bca615 (Initial commit.)
 /installer/output
 *.deb
+*.rpm
