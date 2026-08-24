@@ -12,7 +12,7 @@ cp /home/riverbird/project/bool-download/scripts/bool-download.desktop /home/riv
 
 echo "开始打包..."
 fpm -s dir -t deb \
-  -n boolldownload \
+  -n booldownload \
   -v 1.1.0 \
   --iteration 1.el7 \
   --prefix / \
