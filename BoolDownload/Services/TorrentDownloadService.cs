@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
 using MonoTorrent;
@@ -9,16 +8,14 @@ using MonoTorrent.Client;
 namespace BoolDownload.Services;
 
 /// <summary>
-/// 磁力链接下载引擎：基于 MonoTorrent 3.0.2 实现。
-/// 通过 magnet 协议（magnet:?xt=urn:btih:...）下载资源，支持断点续传与多任务并发。
-/// 全局共享一个 <see cref="ClientEngine"/>，每个下载任务对应一个 <see cref="TorrentManager"/>。
-/// 断点续传依赖 MonoTorrent 的 metadata 缓存与 fast resume 自动保存/加载机制
-/// （缓存目录持久化到应用本地数据目录，重启后自动恢复）。
+/// BT 种子下载引擎：基于 MonoTorrent 3.0.2 实现。
+/// 通过加载本地 .torrent 文件（含完整 metadata）创建下载任务，
+/// 复用与磁力链接下载相同的共享 <see cref="ClientEngine"/>。
 /// </summary>
-public sealed class MagnetLinkDownload : IDisposable
+public sealed class TorrentDownload : IDisposable
 {
     private readonly object _sync = new();
-    private readonly string _magnetUrl;
+    private readonly string _torrentPath;
     private readonly string _saveDirectory;
     private readonly string? _preferredName;
     private readonly int _maxConnections;
@@ -35,10 +32,10 @@ public sealed class MagnetLinkDownload : IDisposable
     /// <summary>错误信息（失败时）。</summary>
     public string? Error { get; private set; }
 
-    /// <summary>种子名称（metadata 下载完成后更新为真实名称）。</summary>
+    /// <summary>种子名称（metadata 加载后更新为真实名称）。</summary>
     public string? Name { get; private set; }
 
-    /// <summary>文件总大小（metadata 就绪前为 -1）。</summary>
+    /// <summary>文件总大小（字节）。</summary>
     public long TotalBytes { get; private set; } = -1;
 
     /// <summary>已下载字节数。</summary>
@@ -47,7 +44,7 @@ public sealed class MagnetLinkDownload : IDisposable
     /// <summary>当前下载速度（字节/秒）。</summary>
     public long Speed { get; private set; }
 
-    /// <summary>任务内容所在目录（保存目录/种子名，metadata 就绪后有效）。</summary>
+    /// <summary>任务内容所在目录（保存目录/种子名）。</summary>
     public string? ContainingDirectory { get; private set; }
 
     /// <summary>进度事件（后台线程触发，需自行切换到 UI 线程）。</summary>
@@ -56,9 +53,9 @@ public sealed class MagnetLinkDownload : IDisposable
     /// <summary>结束事件：完成 / 暂停 / 失败（后台线程触发）。</summary>
     public event EventHandler? Completed;
 
-    public MagnetLinkDownload(string magnetUrl, string saveDirectory, string? preferredName = null, int maxConnections = 50)
+    public TorrentDownload(string torrentPath, string saveDirectory, string? preferredName = null, int maxConnections = 50)
     {
-        _magnetUrl = magnetUrl;
+        _torrentPath = torrentPath;
         _saveDirectory = saveDirectory;
         _preferredName = preferredName;
         _maxConnections = Math.Clamp(maxConnections, 1, 300);
@@ -178,21 +175,21 @@ public sealed class MagnetLinkDownload : IDisposable
     {
         try
         {
-            // 1. 解析磁力链接
-            if (!MagnetLink.TryParse(_magnetUrl, out var magnet))
+            // 1. 加载 .torrent 文件（含完整 metadata）
+            if (!File.Exists(_torrentPath) || !Torrent.TryLoad(_torrentPath, out var torrent) || torrent is null)
             {
-                SetFailed("无效的磁力链接");
+                SetFailed("无效的BT种子文件");
                 return;
             }
 
-            // 2. 将任务加入共享引擎（若该链接的 metadata 已缓存则自动加载）
+            // 2. 将任务加入共享引擎
             var torrentSettings = new TorrentSettingsBuilder
             {
                 MaximumConnections = _maxConnections,
                 CreateContainingDirectory = true,
                 AllowDht = true,
             }.ToSettings();
-            var manager = await MonoTorrentEngine.Instance.AddAsync(magnet, _saveDirectory, torrentSettings);
+            var manager = await MonoTorrentEngine.Instance.AddAsync(_torrentPath, _saveDirectory, torrentSettings);
 
             lock (_sync)
             {
@@ -204,33 +201,17 @@ public sealed class MagnetLinkDownload : IDisposable
                 }
                 _manager = manager;
                 manager.TorrentStateChanged += OnTorrentStateChanged;
+                Name = torrent.Name;
+                TotalBytes = torrent.Size;
+                ContainingDirectory = manager.ContainingDirectory;
             }
 
-            // 3. 等待 metadata（已缓存时立即返回）
-            await manager.WaitForMetadataAsync();
-
-            lock (_sync)
-            {
-                if (_deleting || _disposed) return;
-                var torrent = manager.Torrent;
-                if (torrent is not null)
-                {
-                    Name = torrent.Name;
-                    TotalBytes = torrent.Size;
-                    ContainingDirectory = manager.ContainingDirectory;
-                }
-                else
-                {
-                    Name ??= magnet.Name ?? _preferredName ?? "磁力链接任务";
-                }
-            }
-
-            // 4. 若暂停过则不再自动启动（由 Resume 恢复）
+            // 3. 若暂停过则不再自动启动（由 Resume 恢复）
             bool shouldStart;
             lock (_sync) { shouldStart = State == NativeDownloadState.Downloading && !_deleting && !_disposed; }
             if (!shouldStart) return;
 
-            // 5. 开始下载（自动 HashCheck 校验已有数据，实现断点续传）
+            // 4. 开始下载（自动 HashCheck 校验已有数据，实现断点续传）
             _pollTimer.Start();
             await manager.StartAsync();
         }

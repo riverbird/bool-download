@@ -1,0 +1,77 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:BoolDownload.ViewModels"
+        xmlns:ic="using:FluentIcons.Avalonia"
+        x:Class="BoolDownload.Views.OpenTorrentDialog"
+        x:DataType="vm:TorrentInfoViewModel"
+        Title="BT下载"
+        Width="560"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+    <Design.DataContext>
+        <vm:TorrentInfoViewModel />
+    </Design.DataContext>
+
+    <StackPanel Margin="20" Spacing="14">
+        <Grid ColumnDefinitions="80,*" ColumnSpacing="10">
+            <TextBlock Text="种子文件" VerticalAlignment="Center" />
+            <TextBox Grid.Column="1" Text="{Binding FilePath}"
+                     IsReadOnly="True" TextWrapping="Wrap" />
+        </Grid>
+
+        <TextBlock Text="{Binding TorrentName, StringFormat='种子名称：{0}'}"
+                   FontWeight="SemiBold" TextWrapping="Wrap" />
+
+        <TextBlock Text="包含的文件及文件夹："
+                   FontSize="12"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+
+        <DataGrid ItemsSource="{Binding Files}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  MaxHeight="240"
+                  VerticalScrollBarVisibility="Auto">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="文件 / 文件夹" Binding="{Binding Path}" Width="*" />
+                <DataGridTextColumn Header="大小" Binding="{Binding SizeText}" Width="100" />
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <Grid ColumnDefinitions="80,*" ColumnSpacing="10">
+            <TextBlock Text="保存位置" VerticalAlignment="Center" />
+            <Grid Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <ComboBox ItemsSource="{Binding Folders}"
+                          SelectedItem="{Binding SelectedFolder}" />
+                <Button Grid.Column="1" Click="OnBrowseFolder"
+                        ToolTip.Tip="选择保存位置" Padding="10,6"
+                        VerticalAlignment="Stretch">
+                    <ic:FluentIcon Icon="FolderOpen" IconVariant="Regular" FontSize="16" />
+                </Button>
+            </Grid>
+        </Grid>
+
+        <Grid ColumnDefinitions="80,*" ColumnSpacing="10">
+            <TextBlock Text="最大连接数" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Column="1"
+                           Minimum="1" Maximum="300" Increment="1"
+                           Value="{Binding MaxConnections}"
+                           HorizontalAlignment="Stretch" />
+        </Grid>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button IsDefault="True" Click="OnOk" Padding="16,6">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <ic:FluentIcon Icon="Checkmark" IconVariant="Regular" FontSize="14" VerticalAlignment="Center" />
+                    <TextBlock Text="确定" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+            <Button IsCancel="True" Click="OnCancel" Padding="16,6">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <ic:FluentIcon Icon="Dismiss" IconVariant="Regular" FontSize="14" VerticalAlignment="Center" />
+                    <TextBlock Text="取消" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+        </StackPanel>
+    </StackPanel>
+</Window>

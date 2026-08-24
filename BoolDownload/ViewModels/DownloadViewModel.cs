@@ -2,7 +2,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Input.Platform;
+using Avalonia.Platform.Storage;
 using Avalonia.Styling;
+using MonoTorrent;
 using Avalonia.Threading;
 using BoolDownload.Services;
 using BoolDownload.Views;
@@ -52,6 +54,7 @@ public partial class DownloadViewModel : ViewModelBase
     private readonly Dictionary<DownloadItem, NativeDownload> _nativeDownloads = new();
     private readonly Dictionary<DownloadItem, DownloaderDownload> _downloaderDownloads = new();
     private readonly Dictionary<DownloadItem, MagnetLinkDownload> _magnetDownloads = new();
+    private readonly Dictionary<DownloadItem, TorrentDownload> _torrentDownloads = new();
     private DispatcherTimer? _timer;
 
     public ObservableCollection<StatusItem> StatusItems { get; } = new()
@@ -150,6 +153,12 @@ public partial class DownloadViewModel : ViewModelBase
                 if (item.Engine == DownloadEngine.Magnet)
                 {
                     ResumeMagnetDownload(item);
+                    continue;
+                }
+
+                if (item.Engine == DownloadEngine.Torrent)
+                {
+                    ResumeTorrentDownload(item);
                     continue;
                 }
 
@@ -406,6 +415,90 @@ public partial class DownloadViewModel : ViewModelBase
             (int)dialogVm.MaxConnections);
     }
 
+    /// <summary>
+    /// 弹出“打开BT种子”流程：先选择 .torrent 文件，解析后展示种子内文件列表，
+    /// 用户确认后将 BT 下载任务加入列表并开始下载。
+    /// </summary>
+    [RelayCommand]
+    private async Task NewTorrent()
+    {
+        var owner = GetMainWindow();
+        if (owner is null) return;
+
+        // 1. 选择 .torrent 文件
+        IReadOnlyList<IStorageFile> files;
+        try
+        {
+            files = await owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = "打开BT种子文件",
+                AllowMultiple = false,
+                FileTypeFilter = new[]
+                {
+                    new FilePickerFileType("BT种子文件") { Patterns = new[] { "*.torrent" } },
+                },
+            });
+        }
+        catch (Exception)
+        {
+            return;
+        }
+
+        var file = files.FirstOrDefault();
+        if (file?.Path is not { } uri)
+            return;
+        var torrentPath = uri.IsFile ? uri.LocalPath : uri.OriginalString;
+
+        // 2. 解析种子，列出文件（含文件夹层级）
+        Torrent? torrent;
+        try
+        {
+            torrent = await Task.Run(() => Torrent.TryLoad(torrentPath, out var t) ? t : null);
+        }
+        catch (Exception)
+        {
+            return;
+        }
+        if (torrent is null)
+            return;
+
+        var infoVm = new TorrentInfoViewModel
+        {
+            TorrentName = torrent.Name,
+            FilePath = torrentPath,
+        };
+        foreach (var f in torrent.Files)
+            infoVm.Files.Add(new TorrentFileEntry { Path = f.Path, Length = f.Length });
+
+        // 3. 弹出确认对话框
+        var dialog = new OpenTorrentDialog { DataContext = infoVm };
+        var ok = await dialog.ShowDialog<bool>(owner);
+        if (!ok) return;
+        if (string.IsNullOrWhiteSpace(infoVm.SelectedFolder))
+            return;
+
+        var name = torrent.Name;
+        var item = new DownloadItem
+        {
+            Status = "创建中",
+            Name = name,
+            Url = torrentPath,
+            SavePath = infoVm.SelectedFolder,
+            Done = "0 B",
+            Size = "",
+            Progress = 0,
+            AddedTime = DateTime.Now,
+            MaxConnections = (int)infoVm.MaxConnections,
+            Engine = DownloadEngine.Torrent,
+        };
+        item.PropertyChanged += OnDownloadItemChanged;
+        Items.Add(item);
+        Refresh();
+        Save();
+
+        StartTorrentDownload(item, infoVm.SelectedFolder, name, (int)infoVm.MaxConnections);
+    }
+
     [RelayCommand(CanExecute = nameof(CanStart))]
     private void Start()
     {
@@ -447,6 +540,19 @@ public partial class DownloadViewModel : ViewModelBase
             return;
         }
 
+        if (item.Engine == DownloadEngine.Torrent)
+        {
+            if (_torrentDownloads.TryGetValue(item, out var torrent))
+            {
+                if (torrent.State == NativeDownloadState.Paused)
+                    torrent.Resume();
+                else
+                    torrent.Start();
+                item.Status = "下载中";
+            }
+            return;
+        }
+
         if (item.TaskId > 0)
             _service.StartTask(item.TaskId);
     }
@@ -463,6 +569,9 @@ public partial class DownloadViewModel : ViewModelBase
         if (item.Engine == DownloadEngine.Magnet)
             return _magnetDownloads.TryGetValue(item, out var magnet) &&
                    magnet.State == NativeDownloadState.Paused;
+        if (item.Engine == DownloadEngine.Torrent)
+            return _torrentDownloads.TryGetValue(item, out var torrent) &&
+                   torrent.State == NativeDownloadState.Paused;
         return IsPaused(item);
     }
 
@@ -492,6 +601,13 @@ public partial class DownloadViewModel : ViewModelBase
             return;
         }
 
+        if (item.Engine == DownloadEngine.Torrent)
+        {
+            if (_torrentDownloads.TryGetValue(item, out var torrent))
+                torrent.Pause();
+            return;
+        }
+
         if (item.TaskId > 0)
             _service.StopTask(item.TaskId);
     }
@@ -508,6 +624,9 @@ public partial class DownloadViewModel : ViewModelBase
         if (item.Engine == DownloadEngine.Magnet)
             return _magnetDownloads.TryGetValue(item, out var magnet) &&
                    magnet.State == NativeDownloadState.Downloading;
+        if (item.Engine == DownloadEngine.Torrent)
+            return _torrentDownloads.TryGetValue(item, out var torrent) &&
+                   torrent.State == NativeDownloadState.Downloading;
         return IsDownloading(item);
     }
 
@@ -589,6 +708,28 @@ public partial class DownloadViewModel : ViewModelBase
             return;
         }
 
+        if (item.Engine == DownloadEngine.Torrent)
+        {
+            if (_torrentDownloads.TryGetValue(item, out var torrent))
+            {
+                _torrentDownloads.Remove(item);
+                await torrent.DeleteAsync(deleteFile: true);
+                torrent.Dispose();
+            }
+            else
+            {
+                // 任务已完成后对象被释放，直接清理残留文件。
+                DeleteTorrentFiles(item, deleteFinal: true);
+            }
+
+            item.PropertyChanged -= OnDownloadItemChanged;
+            Items.Remove(item);
+            Refresh();
+            RefreshCommandStates();
+            Save();
+            return;
+        }
+
         _service.DeleteTask(item.TaskId, deleteFile: true);
         _activeTasks.Remove(item.TaskId);
         item.PropertyChanged -= OnDownloadItemChanged;
@@ -637,6 +778,15 @@ public partial class DownloadViewModel : ViewModelBase
                     magnet.Dispose();
                 }
             }
+            else if (item.Engine == DownloadEngine.Torrent)
+            {
+                if (_torrentDownloads.TryGetValue(item, out var torrent))
+                {
+                    _torrentDownloads.Remove(item);
+                    torrent.Pause();
+                    torrent.Dispose();
+                }
+            }
             else
             {
                 _activeTasks.Remove(item.TaskId);
@@ -675,6 +825,14 @@ public partial class DownloadViewModel : ViewModelBase
                 {
                     magnet.Pause();
                     _magnetDownloads.Remove(item);
+                }
+            }
+            else if (item.Engine == DownloadEngine.Torrent)
+            {
+                if (_torrentDownloads.TryGetValue(item, out var torrent))
+                {
+                    torrent.Pause();
+                    _torrentDownloads.Remove(item);
                 }
             }
             else if (item.TaskId > 0)
@@ -915,6 +1073,131 @@ public partial class DownloadViewModel : ViewModelBase
             if (File.Exists(package)) File.Delete(package);
 
             if (deleteFinal && File.Exists(final)) File.Delete(final);
+        }
+        catch
+        {
+            // Ignore cleanup failures.
+        }
+    }
+
+    /// <summary>使用 BT 种子下载引擎（MonoTorrent）创建并开始一个下载任务。</summary>
+    private void StartTorrentDownload(DownloadItem item, string directory, string? preferredName, int maxConnections)
+    {
+        try
+        {
+            var download = new TorrentDownload(item.Url, directory, preferredName, maxConnections);
+            _torrentDownloads[item] = download;
+            download.ProgressChanged += (_, p) => OnTorrentProgress(item, p);
+            download.Completed += (_, _) => OnTorrentCompleted(download, item);
+            item.Status = "下载中";
+            download.Start();
+            Save();
+        }
+        catch (Exception)
+        {
+            item.Status = "下载失败";
+        }
+    }
+
+    /// <summary>应用启动时恢复 BT 种子下载任务（断点续传，已下载数据自动复用）。</summary>
+    private void ResumeTorrentDownload(DownloadItem item)
+    {
+        try
+        {
+            var download = new TorrentDownload(item.Url, item.SavePath, item.Name, Math.Max(1, item.MaxConnections));
+            _torrentDownloads[item] = download;
+            download.ProgressChanged += (_, p) => OnTorrentProgress(item, p);
+            download.Completed += (_, _) => OnTorrentCompleted(download, item);
+            item.Status = "等待";
+            download.Start();
+        }
+        catch (Exception)
+        {
+            item.Status = "恢复失败";
+        }
+    }
+
+    /// <summary>BT 种子下载进度上报（后台线程触发，统一切换到 UI 线程更新界面）。</summary>
+    private void OnTorrentProgress(DownloadItem item, NativeDownloadProgress progress)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (!Items.Contains(item)) return;
+            // 任务已被移入回收站：不再更新其进度。
+            if (item.Status == "已删除") return;
+
+            item.Size = FormatBytes((ulong)Math.Max(0, progress.TotalBytes));
+            item.Done = FormatBytes((ulong)Math.Max(0, progress.DownloadedBytes));
+            if (progress.TotalBytes > 0)
+                item.Progress = (double)progress.DownloadedBytes / progress.TotalBytes * 100;
+            if (item.Status is "创建中" or "等待")
+                item.Status = "下载中";
+
+            DownloadSpeed = FormatSpeed((ulong)Math.Max(0, progress.Speed));
+            TrySaveProgress();
+        });
+    }
+
+    /// <summary>BT 种子下载结束（完成/暂停/失败）处理（后台线程触发，统一切换到 UI 线程更新界面）。</summary>
+    private void OnTorrentCompleted(TorrentDownload download, DownloadItem item)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (!Items.Contains(item)) return;
+
+            // 任务已被移入回收站：不覆盖其状态，仅释放下载对象。
+            if (item.Status == "已删除")
+            {
+                _torrentDownloads.Remove(item);
+                download.Dispose();
+                return;
+            }
+
+            switch (download.State)
+            {
+                case NativeDownloadState.Completed:
+                    item.Size = FormatBytes((ulong)Math.Max(0, download.TotalBytes));
+                    item.Done = item.Size;
+                    item.Progress = 100;
+                    item.Status = "已完成";
+                    // 种子任务名以种子元数据中的真实名称为准。
+                    if (!string.IsNullOrWhiteSpace(download.Name))
+                        item.Name = download.Name;
+                    _torrentDownloads.Remove(item);
+                    download.Dispose();
+                    break;
+                case NativeDownloadState.Paused:
+                    item.Status = "已暂停";
+                    break;
+                default:
+                    item.Status = "下载失败";
+                    break;
+            }
+
+            // 所有任务均不在下载时，下载速度置 0。
+            if (!Items.Any(IsActiveDownload))
+                DownloadSpeed = "0 B/s";
+
+            Refresh();
+            RefreshCommandStates();
+            Save();
+        });
+    }
+
+    /// <summary>清理 BT 种子下载的残留文件与最终文件（种子名目录或单文件）。</summary>
+    private static void DeleteTorrentFiles(DownloadItem item, bool deleteFinal)
+    {
+        try
+        {
+            // MonoTorrent 下载内容位于 保存目录/种子名 目录（多文件）或文件（单文件）。
+            var target = Path.Combine(item.SavePath, item.Name);
+            if (deleteFinal)
+            {
+                if (Directory.Exists(target))
+                    Directory.Delete(target, recursive: true);
+                else if (File.Exists(target))
+                    File.Delete(target);
+            }
         }
         catch
         {

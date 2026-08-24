@@ -26,18 +26,18 @@
         <!-- 顶部菜单栏 -->
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="文件">
-                <MenuItem Header="新建下载" Command="{Binding NewDownloadCommand}" />
-                <MenuItem Header="新建磁力链接下载" Command="{Binding NewMagnetLinkCommand}" />
+                <MenuItem Header="新建下载..." Command="{Binding NewDownloadCommand}" />
+                <MenuItem Header="新建磁力链接下载..." Command="{Binding NewMagnetLinkCommand}" />
+                <MenuItem Header="打开BT种子..." Command="{Binding NewTorrentCommand}" />
                 <Separator />
                 <MenuItem Header="退出" Click="OnExit" />
             </MenuItem>
             <MenuItem Header="工具">
-                <MenuItem Header="选项" Click="OnOptions" />
                 <MenuItem Header="外观切换" Command="{Binding ToggleThemeCommand}" />
-                <MenuItem Header="SourceForge/Github加速转换" Click="OnAccelerator" />
+                <MenuItem Header="SourceForge/Github加速转换..." Click="OnAccelerator" />
             </MenuItem>
             <MenuItem Header="帮助">
-                <MenuItem Header="关于" Click="OnAbout" />
+                <MenuItem Header="关于..." Click="OnAbout" />
             </MenuItem>
         </Menu>
 
@@ -99,6 +99,13 @@
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <ic:FluentIcon Icon="Link" IconVariant="Regular" FontSize="14" VerticalAlignment="Center" />
                         <TextBlock Text="磁力链接" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding NewTorrentCommand}"
+                        ToolTip.Tip="打开BT种子下载">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <ic:FluentIcon Icon="Document" IconVariant="Regular" FontSize="14" VerticalAlignment="Center" />
+                        <TextBlock Text="BT下载" VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
                 <Separator Width="1" Height="24" Margin="8,0" VerticalAlignment="Center" />

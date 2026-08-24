@@ -36,11 +36,19 @@ public partial class AboutDialog : Window
         MonoTorrentVersionText.Text = GetPackageVersion(typeof(ClientEngine).Assembly);
 
         ReleaseNoteText.Text =
-            "BoolDownload 1.1.0\n" +
+            "BoolDownload(布尔下载)\n" +
             "================\n" +
-            "\n" +
-            "基于 Avalonia 12 构建的跨平台下载管理工具,集成迅雷开放下载引擎(Xunlei Open Download SDK),\n" +
+            "基于 Avalonia 12 构建的跨平台下载管理工具,集成迅雷开放下载引擎(Xunlei Open Download SDK)," +
             "支持多渠道断点续传下载。\n" +
+            "\n" +
+            "\n" +
+            "2026-08-25 v1.2.0\n" +
+            "-----------------\n" +
+            "- 新增：BT下载支持；\n" +
+            "- 新增：工具增加Sourceforge/Github文件加速；\n" +
+            "- 新增：深色/浅色模式切换；\n" +
+            "- 优化：下载列表增加右击选择复制下载链接；\n" +
+            "- 优化：已完成的下载按时间倒序排列。\n" +
             "\n" +
             "\n" +
             "2026-08-21 v1.1.0\n" +

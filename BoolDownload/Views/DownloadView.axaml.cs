@@ -36,12 +36,6 @@ public partial class DownloadView : ContentPage
             new AboutDialog().ShowDialog(owner);
     }
 
-    private void OnOptions(object? sender, RoutedEventArgs e)
-    {
-        if (TopLevel.GetTopLevel(this) is Window owner)
-            new OptionsDialog().ShowDialog(owner);
-    }
-
     private void OnAccelerator(object? sender, RoutedEventArgs e)
     {
         if (TopLevel.GetTopLevel(this) is Window owner)
