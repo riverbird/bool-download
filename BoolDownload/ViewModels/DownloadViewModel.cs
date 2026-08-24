@@ -1,6 +1,8 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Input.Platform;
+using Avalonia.Styling;
 using Avalonia.Threading;
 using BoolDownload.Services;
 using BoolDownload.Views;
@@ -213,9 +215,15 @@ public partial class DownloadViewModel : ViewModelBase
         FilteredItems.Clear();
         if (selected is null) return;
 
-        foreach (var item in Items)
-            if (selected.Matches?.Invoke(item) ?? true)
-                FilteredItems.Add(item);
+        IEnumerable<DownloadItem> matching = Items
+            .Where(i => selected.Matches?.Invoke(i) ?? true);
+
+        // “已完成”列表按添加时间降序排列。
+        if (selected.Name == "已完成")
+            matching = matching.OrderByDescending(i => i.AddedTime);
+
+        foreach (var item in matching)
+            FilteredItems.Add(item);
     }
 
     private void UpdateCounts()
@@ -245,18 +253,50 @@ public partial class DownloadViewModel : ViewModelBase
 
         if (string.IsNullOrWhiteSpace(dialogVm.SelectedFolder)) return;
 
+        await CreateDownloadAsync(dialogVm);
+    }
+
+    /// <summary>
+    /// 根据“创建新下载”对话框的视图模型创建并启动一个下载任务。
+    /// 解析迅雷专用链、补全文件名后加入列表，并按所选引擎开始下载。
+    /// </summary>
+    public async Task CreateDownloadAsync(NewDownloadViewModel vm)
+    {
+        if (vm is null) return;
+
+        var url = vm.Url.Trim();
+        if (string.IsNullOrWhiteSpace(url)) return;
+
+        // 将 thunder:// 迅雷专用链接解析还原为普通 http/https 直链。
+        if (ThunderUrlParser.IsThunderUrl(url))
+        {
+            if (!ThunderUrlParser.TryParse(url, out var parsed))
+                return;
+            url = parsed;
+            vm.Url = url;
+        }
+
+        if (string.IsNullOrWhiteSpace(vm.FileName))
+        {
+            var name = TryGetFileNameFromUrl(url);
+            if (string.IsNullOrWhiteSpace(name)) return;
+            vm.FileName = name;
+        }
+
+        if (string.IsNullOrWhiteSpace(vm.SelectedFolder)) return;
+
         var item = new DownloadItem
         {
             Status = "创建中",
-            Name = dialogVm.FileName,
-            Url = dialogVm.Url,
-            SavePath = dialogVm.SelectedFolder,
+            Name = vm.FileName,
+            Url = vm.Url,
+            SavePath = vm.SelectedFolder,
             Done = "0 B",
             Size = "",
             Progress = 0,
             AddedTime = DateTime.Now,
-            MaxConnections = (int)dialogVm.MaxConnections,
-            Engine = dialogVm.Engine,
+            MaxConnections = (int)vm.MaxConnections,
+            Engine = vm.Engine,
         };
         item.PropertyChanged += OnDownloadItemChanged;
         Items.Add(item);
@@ -264,15 +304,15 @@ public partial class DownloadViewModel : ViewModelBase
         Save();
 
         // 原生下载引擎（HttpClient / Downloader）：直接分段下载，无需迅雷 SDK。
-        if (dialogVm.Engine == DownloadEngine.Native)
+        if (vm.Engine == DownloadEngine.Native)
         {
-            StartNativeDownload(item, dialogVm.SelectedFolder, dialogVm.FileName, (int)dialogVm.MaxConnections);
+            StartNativeDownload(item, vm.SelectedFolder, vm.FileName, (int)vm.MaxConnections);
             return;
         }
 
-        if (dialogVm.Engine == DownloadEngine.Downloader)
+        if (vm.Engine == DownloadEngine.Downloader)
         {
-            StartDownloaderDownload(item, dialogVm.SelectedFolder, dialogVm.FileName, (int)dialogVm.MaxConnections);
+            StartDownloaderDownload(item, vm.SelectedFolder, vm.FileName, (int)vm.MaxConnections);
             return;
         }
 
@@ -286,9 +326,9 @@ public partial class DownloadViewModel : ViewModelBase
             }
 
             var (result, taskId) = _service.CreateTask(
-                dialogVm.Url,
-                dialogVm.SelectedFolder,
-                dialogVm.FileName);
+                vm.Url,
+                vm.SelectedFolder,
+                vm.FileName);
             if (result != XLConstants.ErrorSuccess || taskId == 0)
             {
                 item.Status = "创建失败";
@@ -308,6 +348,24 @@ public partial class DownloadViewModel : ViewModelBase
         {
             item.Status = "下载失败";
         }
+    }
+
+    private static string? TryGetFileNameFromUrl(string url)
+    {
+        try
+        {
+            if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            {
+                var name = Path.GetFileName(uri.LocalPath);
+                if (!string.IsNullOrWhiteSpace(name))
+                    return Uri.UnescapeDataString(name);
+            }
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+        return null;
     }
 
     /// <summary>弹出“创建磁力链接下载”对话框，确认后创建并开始磁力链接下载任务。</summary>
@@ -987,6 +1045,29 @@ public partial class DownloadViewModel : ViewModelBase
         {
             // Ignore cleanup failures.
         }
+    }
+
+    [RelayCommand]
+    private void ToggleTheme()
+    {
+        var app = Application.Current;
+        if (app is null) return;
+
+        app.RequestedThemeVariant = app.RequestedThemeVariant == ThemeVariant.Dark
+            ? ThemeVariant.Light
+            : ThemeVariant.Dark;
+    }
+
+    [RelayCommand]
+    private async Task CopyLink()
+    {
+        if (SelectedItem is not { } item) return;
+
+        var window = GetMainWindow();
+        if (window is null) return;
+
+        if (window.Clipboard is not null)
+            await window.Clipboard.SetTextAsync(item.Url);
     }
 
     [RelayCommand]

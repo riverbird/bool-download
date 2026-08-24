@@ -33,6 +33,8 @@
             </MenuItem>
             <MenuItem Header="工具">
                 <MenuItem Header="选项" Click="OnOptions" />
+                <MenuItem Header="外观切换" Command="{Binding ToggleThemeCommand}" />
+                <MenuItem Header="SourceForge/Github加速转换" Click="OnAccelerator" />
             </MenuItem>
             <MenuItem Header="帮助">
                 <MenuItem Header="关于" Click="OnAbout" />
@@ -149,6 +151,7 @@
                         <MenuItem Header="开始" Command="{Binding StartCommand}" />
                         <MenuItem Header="暂停" Command="{Binding PauseCommand}" />
                         <Separator />
+                        <MenuItem Header="复制下载链接" Command="{Binding CopyLinkCommand}" />
                         <MenuItem Header="属性" Command="{Binding PropertiesCommand}" />
                     </ContextMenu>
                 </DataGrid.ContextMenu>

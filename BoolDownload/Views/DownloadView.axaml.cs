@@ -41,4 +41,13 @@ public partial class DownloadView : ContentPage
         if (TopLevel.GetTopLevel(this) is Window owner)
             new OptionsDialog().ShowDialog(owner);
     }
+
+    private void OnAccelerator(object? sender, RoutedEventArgs e)
+    {
+        if (TopLevel.GetTopLevel(this) is Window owner)
+        {
+            var vm = DataContext as DownloadViewModel;
+            new AcceleratorDialog(vm).ShowDialog(owner);
+        }
+    }
 }
