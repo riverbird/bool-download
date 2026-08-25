@@ -7,7 +7,7 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{7EA4BC15-9C2A-4214-9906-8186070BDE6E}
 AppName=BoollDownload
-AppVersion=1.1.0
+AppVersion=1.2.0
 ;AppVerName={cm:NameAndVersion,BoollDownload,1.0}
 AppPublisher=Superiot, Inc.
 AppPublisherURL=http://www.10qu.com/
