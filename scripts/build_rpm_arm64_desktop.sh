@@ -1,0 +1,27 @@
+# 创建build_root目录
+# mkdir build_root
+echo "准备文件..."
+rm -rf /home/hunter/builder/bool_download_build_root_arm64/usr/local/bool-download/*
+cp -r /home/hunter/project/bool-download/BoolDownload.Desktop/bin/Release/net10.0/linux-arm64/publish/* /home/hunter/builder/bool_download_build_root_arm64/usr/local/bool-download/
+
+cp /home/hunter/project/bool-download/BoolDownload/Assets/Icon.png /home/hunter/builder/bool_download_build_root_arm64/usr/local/bool-download/bool-download-icon.png
+cp /home/hunter/project/bool-download/BoolDownload/Assets/Icon.png /home/hunter/builder/bool_download_build_root_arm64/usr/share/icons/bool-download-icon.png
+
+cp /home/hunter/project/bool-download/scripts/bool-download.desktop /home/hunter/builder/bool_download_build_root_arm64/usr/local/bool-download/
+cp /home/hunter/project/bool-download/scripts/bool-download.desktop /home/hunter/builder/bool_download_build_root_arm64/usr/share/applications/
+
+echo "开始打包..."
+fpm -s dir -t rpm \
+  -n booldownload \
+  -v 1.2.0 \
+  --iteration 1.el7 \
+  --prefix / \
+  --description "基于迅雷下载引擎开发的跨平台下载工具。" \
+  --maintainer "riverbird@aliyun.com" \
+  --url "http://www.zjsbt.cn/service/derivatives" \
+  --architecture arm64 \
+  -C /home/hunter/builder/bool_download_build_root_arm64
+
+ # Check desktop file
+ # rpm -qpl BoolHub-3.9.0-1.el7.x86_64.rpm | grep desktop
+
