@@ -51,7 +51,7 @@
                             <TextBlock Text="{Binding Title}"
                                        TextWrapping="Wrap"
                                        FontSize="12"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                             <TextBox Text="{Binding Link}"
                                      IsReadOnly="True"
                                      TextWrapping="Wrap" />

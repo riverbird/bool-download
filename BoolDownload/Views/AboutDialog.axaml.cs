@@ -21,7 +21,7 @@ public partial class AboutDialog : Window
         VersionText.Text = $"版本 {versionText}";
         SoftwareVersionText.Text = versionText;
         CopyrightText.Text = $"Copyright © {DateTime.Now.Year}";
-        LicenseText.Text = "GPL-3.0 license";
+        LicenseText.Text = "LGPL-3.0 license";
         EngineText.Text = "Xunlei Open Download SDK";
 
         OsText.Text = $"{RuntimeInformation.OSDescription}";
@@ -40,6 +40,14 @@ public partial class AboutDialog : Window
             "================\n" +
             "基于 Avalonia 12 构建的跨平台下载管理工具,集成迅雷开放下载引擎(Xunlei Open Download SDK)," +
             "支持多渠道断点续传下载。\n" +
+            "\n" +
+            "\n" +
+            "2026-09-15 v1.3.0\n" +
+            "-----------------\n" +
+            "- 新增:检查更新功能;\n" +
+            "- 优化:风格改为Fluent Design;\n" +
+            "- 优化:对磁力链接下载进行优化;\n" + 
+            "- 修复:删除磁力链接条目及文件时偶发失败的问题;\n" +
             "\n" +
             "\n" +
             "2026-08-25 v1.2.0\n" +

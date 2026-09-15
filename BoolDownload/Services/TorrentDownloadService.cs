@@ -186,6 +186,7 @@ public sealed class TorrentDownload : IDisposable
             var torrentSettings = new TorrentSettingsBuilder
             {
                 MaximumConnections = _maxConnections,
+                UploadSlots = 8,
                 CreateContainingDirectory = true,
                 AllowDht = true,
             }.ToSettings();

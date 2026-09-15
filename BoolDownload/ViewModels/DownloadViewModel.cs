@@ -13,6 +13,7 @@ using CommunityToolkit.Mvvm.Input;
 using FluentIcons.Common;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -377,7 +378,7 @@ public partial class DownloadViewModel : ViewModelBase
         return null;
     }
 
-    /// <summary>弹出“创建磁力链接下载”对话框，确认后创建并开始磁力链接下载任务。</summary>
+/// <summary>弹出“创建磁力链接下载”对话框，确认后创建并开始磁力链接下载任务。</summary>
     [RelayCommand]
     private async Task NewMagnetLink()
     {
@@ -402,7 +403,6 @@ public partial class DownloadViewModel : ViewModelBase
             Progress = 0,
             AddedTime = DateTime.Now,
             MaxConnections = (int)dialogVm.MaxConnections,
-            Engine = DownloadEngine.Magnet,
         };
         item.PropertyChanged += OnDownloadItemChanged;
         Items.Add(item);
@@ -413,6 +413,95 @@ public partial class DownloadViewModel : ViewModelBase
         StartMagnetDownload(item, dialogVm.SelectedFolder,
             string.IsNullOrWhiteSpace(dialogVm.FileName) ? null : dialogVm.FileName,
             (int)dialogVm.MaxConnections);
+
+// 等待磁力元数据就绪，弹出文件列表确认对话框
+        try
+        {
+            var magnet = _magnetDownloads[item];
+            await magnet.MetadataReadyTask;
+            // 元数据就绪，显示文件信息对话框
+            await ShowMagnetInfoDialog(item, magnet, owner);
+        }
+        catch (Exception)
+        {
+            // 超时或错误：直接继续下载，不弹出对话框
+            if (item.Status is "创建中" or "等待" or "获取元数据中")
+                item.Status = "下载中";
+        }
+    }
+
+    /// <summary>
+    /// 显示磁力链接文件信息确认对话框。
+    /// </summary>
+    private async Task ShowMagnetInfoDialog(DownloadItem item, MagnetLinkDownload download, Window owner)
+    {
+        // 获取已就绪的元数据
+        string? name = download.Name;
+        long totalBytes = download.TotalBytes;
+        string? containingDirectory = download.ContainingDirectory;
+
+        // 如果metadata尚未就绪，则等待片刻后再显示
+        if (string.IsNullOrEmpty(name) || totalBytes < 0)
+        {
+            // 等待最多5秒让metadata就绪
+            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            try
+            {
+                await download.MetadataReadyTask.WaitAsync(cts.Token);
+                name = download.Name;
+                totalBytes = download.TotalBytes;
+            }
+            catch
+            {
+                // 超时，使用可用信息
+            }
+        }
+
+        var infoVm = new MagnetInfoViewModel
+        {
+            TorrentName = name ?? "磁力链接任务",
+            MagnetUrl = item.Url,
+            SelectedFolder = item.SavePath,
+            MaxConnections = (decimal)item.MaxConnections,
+        };
+
+        // 如果有文件信息，从磁力管理器提取文件列表
+        if (totalBytes > 0 && download.Manager is { } manager)
+        {
+            try
+            {
+                var torrent = manager.Torrent;
+                if (torrent is not null)
+                {
+                    foreach (var f in torrent.Files)
+                    {
+                        infoVm.Files.Add(new MagnetFileEntry
+                        {
+                            Path = f.Path,
+                            Length = f.Length,
+                        });
+                    }
+                    // 如果有父目录，预先添加目录条目
+                    if (!string.IsNullOrEmpty(containingDirectory))
+                    {
+                        var dirName = Path.GetDirectoryName(containingDirectory);
+                        if (!string.IsNullOrEmpty(dirName))
+                        {
+                            infoVm.Files.Insert(0, new MagnetFileEntry { Path = dirName, Length = 0 });
+                        }
+                    }
+                }
+            }
+            catch { /* 忽略，使用空文件列表 */ }
+        }
+
+        var dlg = new MagnetInfoDialog { DataContext = infoVm };
+        var confirm = await dlg.ShowDialog<bool>(owner);
+        if (!confirm) return;
+
+        // 用户确认后，确保状态正确更新
+        if (item.Status is "创建中" or "等待" or "获取元数据中")
+            item.Status = "下载中";
     }
 
     /// <summary>
@@ -691,8 +780,8 @@ public partial class DownloadViewModel : ViewModelBase
             if (_magnetDownloads.TryGetValue(item, out var magnet))
             {
                 _magnetDownloads.Remove(item);
-                await magnet.DeleteAsync(deleteFile: true);
-                magnet.Dispose();
+                try { await magnet.DeleteAsync(deleteFile: true); } catch { /* 忽略 */ }
+                try { magnet.Dispose(); } catch { /* 忽略 */ }
             }
             else
             {
@@ -1251,12 +1340,35 @@ public partial class DownloadViewModel : ViewModelBase
             // 任务已被移入回收站：不再更新其进度。
             if (item.Status == "已删除") return;
 
-            item.Size = FormatBytes((ulong)Math.Max(0, progress.TotalBytes));
-            item.Done = FormatBytes((ulong)Math.Max(0, progress.DownloadedBytes));
-            if (progress.TotalBytes > 0)
-                item.Progress = (double)progress.DownloadedBytes / progress.TotalBytes * 100;
-            if (item.Status is "创建中" or "等待")
+            // 使用底层监控的已接收字节数作为下载大小（metadata未就绪时总大小未知）
+            if (progress.TotalBytes <= 0)
+            {
+                // metadata未就绪：显示已接收字节，但进度百分比暂 unavailable
+                item.Size = FormatBytes((ulong)Math.Max(0, progress.DownloadedBytes));
+                if (progress.DownloadedBytes > 0)
+                    item.Done = FormatBytes((ulong)progress.DownloadedBytes);
+                else
+                    item.Done = FormatBytes((ulong)Math.Max(0, progress.TotalBytes));
+                item.Progress = 0;
+            }
+            else
+            {
+                item.Size = FormatBytes((ulong)Math.Max(0, progress.TotalBytes));
+                item.Done = FormatBytes((ulong)Math.Max(0, progress.DownloadedBytes));
+                if (progress.TotalBytes > 0)
+                    item.Progress = (double)progress.DownloadedBytes / progress.TotalBytes * 100;
+            }
+
+            // metadata 下载中显示"获取元数据中"，避免"下载中"无进度的错觉。
+            if (progress.IsMetadataWaiting)
+            {
+                if (item.Status is "创建中" or "等待" or "下载中")
+                    item.Status = "获取元数据中";
+            }
+            else if (item.Status is "创建中" or "等待" or "获取元数据中")
+            {
                 item.Status = "下载中";
+            }
 
             DownloadSpeed = FormatSpeed((ulong)Math.Max(0, progress.Speed));
             TrySaveProgress();
@@ -1458,11 +1570,11 @@ public partial class DownloadViewModel : ViewModelBase
     }
 
     private static bool IsDownloading(DownloadItem item) =>
-        item.Status is "等待" or "下载中";
+        item.Status is "等待" or "获取元数据中" or "下载中";
 
     /// <summary>判断任务是否处于活跃下载状态（用于速度归零与移入回收站前的停止判断）。</summary>
     private static bool IsActiveDownload(DownloadItem item) =>
-        item.Status is "创建中" or "等待" or "启动中" or "下载中";
+        item.Status is "创建中" or "等待" or "获取元数据中" or "启动中" or "下载中";
 
     private static bool IsPaused(DownloadItem item) =>
         item.Status is "暂停中" or "已暂停";

@@ -6,8 +6,8 @@
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{7EA4BC15-9C2A-4214-9906-8186070BDE6E}
-AppName=BoollDownload
-AppVersion=1.2.0
+AppName=布尔下载
+AppVersion=1.3.0
 ;AppVerName={cm:NameAndVersion,BoollDownload,1.0}
 AppPublisher=Superiot, Inc.
 AppPublisherURL=http://www.10qu.com/
@@ -45,8 +45,8 @@ Source: "D:\project\bool-download\BoolDownload.Desktop\bin\Release\net10.0\win-x
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files.
 
 [Icons]
-Name: "{autoprograms}\BoollDownload"; Filename: "{app}\BoolDownload.Desktop.exe"
-Name: "{autodesktop}\BoollDownload"; Filename: "{app}\BoolDownload.Desktop.exe"; Tasks: desktopicon
+Name: "{autoprograms}\布尔下载"; Filename: "{app}\BoolDownload.Desktop.exe"
+Name: "{autodesktop}\布尔下载"; Filename: "{app}\BoolDownload.Desktop.exe"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\BoolDownload.Desktop.exe"; Description: "{cm:LaunchProgram,BoollDownload}"; Flags: nowait postinstall skipifsilent

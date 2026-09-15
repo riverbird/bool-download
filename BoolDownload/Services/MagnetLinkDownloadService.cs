@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using MonoTorrent;
@@ -17,17 +18,24 @@ namespace BoolDownload.Services;
 /// </summary>
 public sealed class MagnetLinkDownload : IDisposable
 {
-    private readonly object _sync = new();
+private readonly object _sync = new();
     private readonly string _magnetUrl;
     private readonly string _saveDirectory;
     private readonly string? _preferredName;
     private readonly int _maxConnections;
-    private readonly Timer _pollTimer;
+    private System.Timers.Timer _pollTimer;
     private TorrentManager? _manager;
     private Task? _runTask;
     private bool _completed;
     private bool _deleting;
     private bool _disposed;
+    private readonly TaskCompletionSource<bool> _metadataReady = new();
+
+    /// <summary>种子管理器（metadata就绪后有效）。</summary>
+    public TorrentManager? Manager => _manager;
+
+    /// <summary>当磁力元数据就绪时完成的任务。</summary>
+    public Task MetadataReadyTask => _metadataReady.Task;
 
     /// <summary>当前任务状态。</summary>
     public NativeDownloadState State { get; private set; } = NativeDownloadState.Pending;
@@ -63,7 +71,7 @@ public sealed class MagnetLinkDownload : IDisposable
         _preferredName = preferredName;
         _maxConnections = Math.Clamp(maxConnections, 1, 300);
 
-        _pollTimer = new Timer(500)
+        _pollTimer = new System.Timers.Timer(500)
         {
             AutoReset = true,
         };
@@ -125,7 +133,7 @@ public sealed class MagnetLinkDownload : IDisposable
         {
             _deleting = true;
             if (State != NativeDownloadState.Completed)
-                State = NativeDownloadState.Pending;
+                State = NativeDownloadState.Failed;
         }
 
         _pollTimer.Stop();
@@ -135,7 +143,21 @@ public sealed class MagnetLinkDownload : IDisposable
 
         if (manager is not null)
         {
-            try { await manager.StopAsync(); } catch { /* 忽略 */ }
+            // 给 StopAsync 加超时，防止 MonoTorrent 卡死导致 UI 无响应。
+            try
+            {
+                var stopTask = manager.StopAsync();
+                if (await Task.WhenAny(stopTask, Task.Delay(5000)) != stopTask)
+                {
+                    // StopAsync 超时，直接继续清理。
+                }
+                else
+                {
+                    await stopTask; // 确保异常被观察。
+                }
+            }
+            catch { /* 忽略 */ }
+
             try
             {
                 await MonoTorrentEngine.Instance.RemoveAsync(manager,
@@ -143,6 +165,20 @@ public sealed class MagnetLinkDownload : IDisposable
             }
             catch { /* 忽略 */ }
             lock (_sync) { _manager = null; }
+        }
+
+        // 清理下载文件（StopAsync 可能超时导致 RemoveAsync 未执行，需手动清理）。
+        if (deleteFile)
+        {
+            try
+            {
+                var dir = !string.IsNullOrWhiteSpace(ContainingDirectory) && System.IO.Directory.Exists(ContainingDirectory)
+                    ? ContainingDirectory
+                    : null;
+                if (dir is not null)
+                    System.IO.Directory.Delete(dir, recursive: true);
+            }
+            catch { /* 忽略 */ }
         }
 
         var task = _runTask;
@@ -189,6 +225,7 @@ public sealed class MagnetLinkDownload : IDisposable
             var torrentSettings = new TorrentSettingsBuilder
             {
                 MaximumConnections = _maxConnections,
+                UploadSlots = 8,
                 CreateContainingDirectory = true,
                 AllowDht = true,
             }.ToSettings();
@@ -207,7 +244,37 @@ public sealed class MagnetLinkDownload : IDisposable
             }
 
             // 3. 等待 metadata（已缓存时立即返回）
-            await manager.WaitForMetadataAsync();
+            try
+            {
+                await manager.WaitForMetadataAsync();
+                _metadataReady.SetResult(true);
+            }
+            catch
+            {
+                // Ignore errors during metadata wait, the task will still complete
+            }
+
+            // 4. 补充公共 Tracker：磁力链接只有 infohash，冷资源靠 DHT + tracker 才能快速找到 peer
+            try
+            {
+                var trackerManager = manager.TrackerManager;
+                var trackers = new[]
+                {
+                    new Uri("udp://tracker.opentrackr.org:1337/announce"),
+                    new Uri("udp://open.stealth.si:80/announce"),
+                    new Uri("udp://tracker.openbittorrent.com:6969/announce"),
+                    new Uri("udp://open.demonii.com:1337/announce"),
+                    new Uri("udp://exodus.desync.com:6969/announce"),
+                    new Uri("udp://tracker.torrent.eu.org:451/announce"),
+                    new Uri("udp://tracker.tiny-vps.com:6969/announce"),
+                    new Uri("http://tracker.opentrackr.org:1337/announce"),
+                };
+                foreach (var uri in trackers)
+                {
+                    await trackerManager.AddTrackerAsync(uri);
+                }
+            }
+            catch { /* 忽略 */ }
 
             lock (_sync)
             {
@@ -266,6 +333,7 @@ public sealed class MagnetLinkDownload : IDisposable
         long total = TotalBytes;
         long downloaded;
         long speed;
+        bool waitingForMetadata;
 
         lock (_sync)
         {
@@ -274,13 +342,25 @@ public sealed class MagnetLinkDownload : IDisposable
                 total = torrent.Size;
                 TotalBytes = total;
             }
-            downloaded = total > 0 ? (long)(total * manager.Progress / 100.0) : manager.Monitor.DataBytesReceived;
+
+            if (total > 0)
+            {
+                downloaded = (long)(total * manager.Progress / 100.0);
+                waitingForMetadata = false;
+            }
+            else
+            {
+                // metadata 未就绪：使用底层已接收字节数，而非 0。
+                downloaded = manager.Monitor.DataBytesReceived;
+                waitingForMetadata = true;
+            }
+
             DownloadedBytes = downloaded;
             speed = manager.Monitor.DownloadRate;
             Speed = speed;
         }
 
-        ProgressChanged?.Invoke(this, new NativeDownloadProgress(downloaded, total, speed));
+        ProgressChanged?.Invoke(this, new NativeDownloadProgress(downloaded, total, speed, waitingForMetadata));
     }
 
     private void ReportCompleted()

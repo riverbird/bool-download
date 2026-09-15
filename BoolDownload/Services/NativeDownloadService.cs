@@ -45,12 +45,14 @@ public sealed class NativeDownloadProgress
     public long DownloadedBytes { get; }
     public long TotalBytes { get; }
     public long Speed { get; }
+    public bool IsMetadataWaiting { get; }
 
-    public NativeDownloadProgress(long downloadedBytes, long totalBytes, long speed)
+    public NativeDownloadProgress(long downloadedBytes, long totalBytes, long speed, bool isMetadataWaiting = false)
     {
         DownloadedBytes = downloadedBytes;
         TotalBytes = totalBytes;
         Speed = speed;
+        IsMetadataWaiting = isMetadataWaiting;
     }
 }
 

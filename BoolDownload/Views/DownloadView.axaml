@@ -38,6 +38,7 @@
             </MenuItem>
             <MenuItem Header="帮助">
                 <MenuItem Header="关于..." Click="OnAbout" />
+                <MenuItem Header="检查更新" Click="OnCheckUpdate" />
             </MenuItem>
         </Menu>
 
@@ -47,7 +48,7 @@
                  ItemsSource="{Binding StatusItems}"
                  SelectedItem="{Binding SelectedStatus}"
                  BorderThickness="0,0,1,0"
-                 BorderBrush="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+                 BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}">
             <ListBox.ItemTemplate>
                 <DataTemplate DataType="vm:StatusItem">
                     <DockPanel Margin="16,8">
@@ -70,8 +71,8 @@
         <!-- 底部状态栏 -->
         <Border DockPanel.Dock="Bottom"
                 Padding="8,3"
-                BorderThickness="0,1,0,0"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+BorderThickness="0,1,0,0"
+                 BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}">
             <Grid ColumnDefinitions="Auto,1*,Auto">
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6">
                     <ic:FluentIcon Icon="ArrowUp" IconVariant="Regular" FontSize="14" VerticalAlignment="Center" />
@@ -145,10 +146,10 @@
                       CanUserSortColumns="True"
                       SelectionMode="Single"
                       RowHeight="40"
-                      CellPointerPressed="OnCellsPointerPressed"
-                      VerticalScrollBarVisibility="Visible">
-                <DataGrid.ContextMenu>
-                    <ContextMenu DataContext="{Binding DataContext, ElementName=Root}">
+CellPointerPressed="OnCellsPointerPressed"
+                       VerticalScrollBarVisibility="Visible">
+                <DataGrid.ContextFlyout>
+                    <MenuFlyout>
                         <MenuItem Header="删除" Command="{Binding MoveToTrashCommand}" />
                         <MenuItem Header="删除条目及文件" Command="{Binding DeleteCommand}" />
                         <Separator />
@@ -160,8 +161,8 @@
                         <Separator />
                         <MenuItem Header="复制下载链接" Command="{Binding CopyLinkCommand}" />
                         <MenuItem Header="属性" Command="{Binding PropertiesCommand}" />
-                    </ContextMenu>
-                </DataGrid.ContextMenu>
+                    </MenuFlyout>
+                </DataGrid.ContextFlyout>
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="状态" Binding="{Binding Status}" Width="100" />
                     <DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="*" />
