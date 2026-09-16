@@ -26,7 +26,7 @@
       "url": "http://download.10qu.com.cn/bool-download/booldownload_1.3.0-1mint22.3_amd64.deb",
       "fileName": "booldownload_1.3.0-1mint22.3_amd64.deb",
       "checksumSha256": "17a93117e80f778e3b98bb09b8660cf1e970ca10140e726c936efce311c0fcec",
-      "format": "exe"
+      "format": "deb"
     }
   },
   "deb_arm64": {
@@ -39,7 +39,7 @@
       "url": "http://download.10qu.com.cn/bool-download/booldownload_1.3.0-1mint22.3_arm64.deb",
       "fileName": "booldownload_1.3.0-1mint22.3_arm64.deb",
       "checksumSha256": "bf885d1b7c74b0a9f7b5c6c99c42048508be7778291aab1f4df11885c5a8b861",
-      "format": "exe"
+      "format": "deb"
     }
   },
   "rpm_x64": {
@@ -49,10 +49,10 @@
     "forceUpdate": false,
     "status": "available",
     "download": {
-      "url": "https://download.example.com/ExampleApp/v2.5.0/ExampleApp-Setup-2.5.0.exe",
-      "fileName": "ExampleApp-Setup-2.5.0.exe",
-      "checksumSha256": "8f14e45fceea167a5a36dedd4bea2543b0c2e0b1c9a3c26a2b3d9f4e1a7c6b5d",
-      "format": "exe"
+      "url": "http://download.10qu.com.cn/bool-download/booldownload-1.3.0-1.fc44.x86_64.rpm",
+      "fileName": "booldownload-1.3.0-1.fc44.x86_64.rpm",
+      "checksumSha256": "ca40718dc49d9a6377d77d3a7a3b3c65112a82a1735530f3150f63f72582d8ac",
+      "format": "rpm"
     }
   },
   "rpm_arm64": {
@@ -62,9 +62,9 @@
     "forceUpdate": false,
     "status": "available",
     "download": {
-      "url": "https://download.example.com/ExampleApp/v2.5.0/ExampleApp-Setup-2.5.0.exe",
-      "fileName": "ExampleApp-Setup-2.5.0.exe",
-      "checksumSha256": "8f14e45fceea167a5a36dedd4bea2543b0c2e0b1c9a3c26a2b3d9f4e1a7c6b5d",
+      "url": "http://download.10qu.com.cn/bool-download/booldownload-1.3.0-1.fc44.aarch64.rpm",
+      "fileName": "booldownload-1.3.0-1.fc44.aarch64.rpm",
+      "checksumSha256": "8944daa3dbced780e5bebb90101fa676543deef79974c1c0cc291fd90cb05232",
       "format": "exe"
     }
   },
