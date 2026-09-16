@@ -13,7 +13,7 @@ cp /home/riverbird/project/bool-download/scripts/bool-download.desktop /home/riv
 echo "开始打包..."
 fpm -s dir -t deb \
   -n booldownload \
-  -v 1.2.0 \
+  -v 1.3.0 \
   --iteration 1mint22.3 \
   --prefix / \
   --description "基于迅雷下载引擎开发的跨平台下载工具。" \
