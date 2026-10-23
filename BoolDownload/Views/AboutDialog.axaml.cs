@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using BoolDownload.Services;
 using Downloader;
 using MonoTorrent.Client;
 using System;
@@ -18,7 +19,7 @@ public partial class AboutDialog : Window
         var version = Assembly.GetExecutingAssembly().GetName().Version;
         var versionText = version is not null ? version.ToString(3) : "1.1.0";
 
-        VersionText.Text = $"版本 {versionText}";
+        VersionText.Text = $"{Localization.T("Loc_About_Version")} {versionText}";
         SoftwareVersionText.Text = versionText;
         CopyrightText.Text = $"Copyright © {DateTime.Now.Year}";
         LicenseText.Text = "LGPL-3.0 license";
@@ -35,47 +36,99 @@ public partial class AboutDialog : Window
         DownloaderVersionText.Text = GetPackageVersion(typeof(DownloadBuilder).Assembly);
         MonoTorrentVersionText.Text = GetPackageVersion(typeof(ClientEngine).Assembly);
 
-        ReleaseNoteText.Text =
-            "BoolDownload(布尔下载)\n" +
-            "================\n" +
-            "基于 Avalonia 12 构建的跨平台下载管理工具,集成迅雷开放下载引擎(Xunlei Open Download SDK)," +
-            "支持多渠道断点续传下载。\n" +
-            "\n" +
-            "\n" +
-            "2026-09-15 v1.3.0\n" +
-            "-----------------\n" +
-            "- 新增:检查更新功能;\n" +
-            "- 优化:风格改为Fluent Design;\n" +
-            "- 优化:对磁力链接下载进行优化;\n" + 
-            "- 修复:删除磁力链接条目及文件时偶发失败的问题;\n" +
-            "\n" +
-            "\n" +
-            "2026-08-25 v1.2.0\n" +
-            "-----------------\n" +
-            "- 新增：BT下载支持；\n" +
-            "- 新增：工具增加Sourceforge/Github文件加速；\n" +
-            "- 新增：深色/浅色模式切换；\n" +
-            "- 优化：下载列表增加右击选择复制下载链接；\n" +
-            "- 优化：已完成的下载按时间倒序排列。\n" +
-            "\n" +
-            "\n" +
-            "2026-08-21 v1.1.0\n" +
-            "-----------------\n" +
-            "- 新增：thunder://协议下载支持;\n" +
-            "- 新增: 磁力链接下载:支持磁力链接任务的新建、暂停、恢复、删除与断点续传;\n" +
-            "- 新增：下载引擎切换：原生引擎(HttpClient/Downloader)与迅雷引擎;\n" +
-            "- 优化：下载目录可自定义;\n" +
-            "- 优化：删除/删除条目及文件与回收站的逻辑;\n" +
-            "- 优化：已完成的下载任务增加打开文件功能。\n" +
-            "\n" +
-            "\n" +
-            "2026-08-19 v1.0.0\n" +
-            "-----------------\n" +
-            "- 完成基础界面:顶部菜单栏、状态分类侧栏、下载列表(DataGrid)及工具栏。\n" +
-            "- 新增\"新建下载\"对话框,支持设置下载链接、文件名、保存位置与最大连接数。\n" +
-            "- 集成迅雷开放下载引擎,支持任务创建、启动、暂停、删除与进度轮询。\n" +
-            "- 左侧分类列表支持按状态过滤下载项。\n";
+        ReleaseNoteText.Text = Localization.IsEnglish ? ReleaseNotesEnglish : ReleaseNotesChinese;
     }
+
+    private const string ReleaseNotesChinese =
+        "BoolDownload(布尔下载)\n" +
+        "================\n" +
+        "基于 Avalonia 12 构建的跨平台下载管理工具,集成迅雷开放下载引擎(Xunlei Open Download SDK)," +
+        "支持多渠道断点续传下载。\n" +
+        "\n" +
+        "\n" +
+        "2026-10-24 v1.4.0\n" +
+        "-----------------\n" +
+        "- 优化：下载任务增加右键菜单重新下载功能。\n" +
+        "- 优化：增加打开下载对话框时自动加载剪切板内容功能。\n" + 
+        "- 优化：单个下载线程加上速度显示。\n" + 
+        "- 优化：进一步优化FluentDesign设计。\n" +
+        "- 优化：加入中英文切换。\n" +
+        "\n" +
+        "\n" +
+        "2026-09-15 v1.3.0\n" +
+        "-----------------\n" +
+        "- 新增:检查更新功能;\n" +
+        "- 优化:风格改为Fluent Design;\n" +
+        "- 优化:对磁力链接下载进行优化;\n" +
+        "- 修复:删除磁力链接条目及文件时偶发失败的问题;\n" +
+        "\n" +
+        "\n" +
+        "2026-08-25 v1.2.0\n" +
+        "-----------------\n" +
+        "- 新增：BT下载支持；\n" +
+        "- 新增：工具增加Sourceforge/Github文件加速；\n" +
+        "- 新增：深色/浅色模式切换；\n" +
+        "- 优化：下载列表增加右击选择复制下载链接；\n" +
+        "- 优化：已完成的下载按时间倒序排列。\n" +
+        "\n" +
+        "\n" +
+        "2026-08-21 v1.1.0\n" +
+        "-----------------\n" +
+        "- 新增：thunder://协议下载支持;\n" +
+        "- 新增: 磁力链接下载:支持磁力链接任务的新建、暂停、恢复、删除与断点续传;\n" +
+        "- 新增：下载引擎切换：原生引擎(HttpClient/Downloader)与迅雷引擎;\n" +
+        "- 优化：下载目录可自定义;\n" +
+        "- 优化：删除/删除条目及文件与回收站的逻辑;\n" +
+        "- 优化：已完成的下载任务增加打开文件功能。\n" +
+        "\n" +
+        "\n" +
+        "2026-08-19 v1.0.0\n" +
+        "-----------------\n" +
+        "- 完成基础界面:顶部菜单栏、状态分类侧栏、下载列表(DataGrid)及工具栏。\n" +
+        "- 新增\"新建下载\"对话框,支持设置下载链接、文件名、保存位置与最大连接数。\n" +
+        "- 集成迅雷开放下载引擎,支持任务创建、启动、暂停、删除与进度轮询。\n" +
+        "- 左侧分类列表支持按状态过滤下载项。\n";
+
+    private const string ReleaseNotesEnglish =
+        "BoolDownload\n" +
+        "============\n" +
+        "A cross-platform download manager built on Avalonia 12, integrating the Xunlei Open Download SDK " +
+        "with multi-channel resumable downloads.\n" +
+        "\n" +
+        "\n" +
+        "2026-09-15 v1.3.0\n" +
+        "-----------------\n" +
+        "- Added: check for updates;\n" +
+        "- Improved: switched the UI to Fluent Design;\n" +
+        "- Improved: magnet link downloads;\n" +
+        "- Fixed: occasional failure when deleting a magnet entry and its files;\n" +
+        "\n" +
+        "\n" +
+        "2026-08-25 v1.2.0\n" +
+        "-----------------\n" +
+        "- Added: torrent (BT) downloads;\n" +
+        "- Added: SourceForge/Github file accelerator in the Tools menu;\n" +
+        "- Added: dark/light theme switching;\n" +
+        "- Improved: right-click the download list to copy a link;\n" +
+        "- Improved: completed downloads are sorted newest first.\n" +
+        "\n" +
+        "\n" +
+        "2026-08-21 v1.1.0\n" +
+        "-----------------\n" +
+        "- Added: thunder:// protocol downloads;\n" +
+        "- Added: magnet link downloads with create, pause, resume, delete and resume support;\n" +
+        "- Added: engine switching between native (HttpClient/Downloader) and Xunlei;\n" +
+        "- Improved: customizable download folder;\n" +
+        "- Improved: delete / delete-and-remove-files / recycle bin behaviour;\n" +
+        "- Improved: completed downloads can be opened directly.\n" +
+        "\n" +
+        "\n" +
+        "2026-08-19 v1.0.0\n" +
+        "-----------------\n" +
+        "- Built the main UI: menu bar, status sidebar, download list (DataGrid) and toolbar.\n" +
+        "- Added the \"New download\" dialog with link, file name, save location and max connections.\n" +
+        "- Integrated the Xunlei Open Download SDK for creating, starting, pausing, deleting and polling tasks.\n" +
+        "- The sidebar categories filter downloads by status.\n";
 
     private static string GetPackageVersion(Assembly assembly)
     {

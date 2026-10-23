@@ -1,19 +1,79 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="BoolDownload.Views.OptionsDialog"
-        Title="选项"
-        Width="320"
+        Title="{DynamicResource Loc_Title_Options}"
+        Width="620"
         SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
-        CanResize="False">
-    <StackPanel Margin="24" Spacing="20">
-        <TextBlock Text="敬请期待"
-                   FontSize="14"
-                   HorizontalAlignment="Center" />
-        <Button Content="确定"
-                IsDefault="True"
-                MinWidth="100"
-                HorizontalAlignment="Center"
-                Click="OnOk" />
+        CanResize="False"
+        Background="{DynamicResource DialogBackgroundBrush}">
+
+    <Window.Styles>
+        <Style Selector="ListBox.optpage">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="5,0" />
+        </Style>
+        <Style Selector="ListBox.optpage ListBoxItem">
+            <Setter Property="Height" Value="40" />
+            <Setter Property="Margin" Value="0,2" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="FontSize" Value="14" />
+        </Style>
+    </Window.Styles>
+
+    <StackPanel Spacing="0">
+        <Grid ColumnDefinitions="180,*" RowDefinitions="Auto">
+            <Border Background="{DynamicResource SidebarBackgroundBrush}"
+                    BorderBrush="{DynamicResource DividerBrush}"
+                    BorderThickness="0,0,1,0">
+                <ListBox Classes="optpage"
+                         x:Name="PageList"
+                         SelectedIndex="0"
+                         AutomationProperties.Name="Category">
+                    <ListBoxItem Content="{DynamicResource Loc_Opt_PageUI}" />
+                </ListBox>
+            </Border>
+
+            <StackPanel Grid.Column="1" Margin="24,20" Spacing="16">
+                <TextBlock Text="{DynamicResource Loc_Opt_PageUI}"
+                           FontSize="16"
+                           FontWeight="SemiBold" />
+
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="caption" Text="{DynamicResource Loc_Opt_Language}" />
+                    <ComboBox x:Name="LanguageBox"
+                              HorizontalAlignment="Stretch"
+                              AutomationProperties.Name="Language" />
+                </StackPanel>
+
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="caption" Text="{DynamicResource Loc_Opt_Theme}" />
+                    <ComboBox x:Name="ThemeBox"
+                              HorizontalAlignment="Stretch"
+                              AutomationProperties.Name="Theme" />
+                    <CheckBox x:Name="MicaBox"
+                              Margin="0,2,0,0"
+                              Content="{DynamicResource Loc_Opt_Mica}" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+
+        <Border Height="1" Background="{DynamicResource DividerBrush}" />
+
+        <StackPanel Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="8"
+                    Margin="24,16">
+            <Button Classes="secondary"
+                    Content="{DynamicResource Loc_Btn_Cancel}"
+                    IsCancel="True"
+                    Click="OnCancel" />
+            <Button Classes="accent"
+                    Content="{DynamicResource Loc_Btn_Ok}"
+                    IsDefault="True"
+                    Click="OnOk" />
+        </StackPanel>
     </StackPanel>
 </Window>

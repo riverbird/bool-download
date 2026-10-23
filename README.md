@@ -18,7 +18,7 @@
 
 | 类别 | 技术 |
 | --- | --- |
-| UI 框架 | Avalonia 12 (Fluent Theme + FluentAvalonia + FluentIcons) |
+| UI 框架 | Avalonia 12 (Fluent Theme + FluentIcons) |
 | 运行时 | .NET 10 |
 | MVVM | CommunityToolkit.Mvvm |
 | 下载引擎 | Xunlei Open Download SDK、Downloader、MonoTorrent |

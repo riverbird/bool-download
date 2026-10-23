@@ -1,16 +1,137 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:sty="using:FluentAvalonia.Styling"
              xmlns:local="using:BoolDownload"
              x:Class="BoolDownload.App"
              RequestedThemeVariant="Default">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
     <Application.DataTemplates>
         <local:ViewLocator />
     </Application.DataTemplates>
 
+    <Application.Resources>
+        <ResourceDictionary>
+            <!-- 品牌强调色：覆盖 FluentTheme 的系统强调色，使控件与品牌一致 -->
+            <Color x:Key="SystemAccentColor">#4F7CFF</Color>
+
+            <SolidColorBrush x:Key="AccentBrush" Color="#4F7CFF" />
+            <SolidColorBrush x:Key="AccentHoverBrush" Color="#3D69F0" />
+            <SolidColorBrush x:Key="AccentPressedBrush" Color="#2F58D8" />
+            <SolidColorBrush x:Key="DangerBrush" Color="#C42B1C" />
+            <SolidColorBrush x:Key="DangerHoverBrush" Color="#B02A1A" />
+
+            <ResourceDictionary.ThemeDictionaries>
+                <!-- 取值对应 Windows 11 Fluent 主题令牌 -->
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#FFEAF0FB" />
+                    <!-- 页面底色：Windows 11 云母质感的淡蓝层，卡片与侧栏在其上分层 -->
+                    <SolidColorBrush x:Key="PageBackgroundBrush" Color="#FFEAF0FB" />
+                    <SolidColorBrush x:Key="MutedTextBrush" Color="#9E000000" />
+                    <SolidColorBrush x:Key="DividerBrush" Color="#0F000000" />
+                    <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#08000000" />
+                    <SolidColorBrush x:Key="NavItemHoverBrush" Color="#09000000" />
+                    <SolidColorBrush x:Key="NavItemSelectedBrush" Color="#FFFFFFFF" />
+                    <SolidColorBrush x:Key="DialogBackgroundBrush" Color="#FFF2F6FD" />
+                    <SolidColorBrush x:Key="CardBackgroundBrush" Color="#FFFFFFFF" />
+                    <SolidColorBrush x:Key="ControlPressedBrush" Color="#06000000" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#FF1A1F2A" />
+                    <SolidColorBrush x:Key="PageBackgroundBrush" Color="#FF1A1F2A" />
+                    <SolidColorBrush x:Key="MutedTextBrush" Color="#FFCFCFCF" />
+                    <SolidColorBrush x:Key="DividerBrush" Color="#15FFFFFF" />
+                    <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#0AFFFFFF" />
+                    <SolidColorBrush x:Key="NavItemHoverBrush" Color="#0FFFFFFF" />
+                    <SolidColorBrush x:Key="NavItemSelectedBrush" Color="#FF2D3441" />
+                    <SolidColorBrush x:Key="DialogBackgroundBrush" Color="#FF232936" />
+                    <SolidColorBrush x:Key="CardBackgroundBrush" Color="#FF262D3A" />
+                    <SolidColorBrush x:Key="ControlPressedBrush" Color="#0AFFFFFF" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+
     <Application.Styles>
-        <sty:FluentAvaloniaTheme PreferSystemTheme="True" PreferUserAccentColor="True" />
+        <FluentTheme />
+        <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+
+        <!-- Windows 11 默认字体；缺失时回退到 Segoe UI -->
+        <Style Selector="Window">
+            <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI" />
+        </Style>
+
+        <!-- 弱化说明文字 -->
+        <Style Selector="TextBlock.caption">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+        </Style>
+
+        <!-- 控件尺寸沿用 FluentTheme 的 Windows 11 样式，仅统一交互光标与对齐 -->
+        <Style Selector="Button.accent">
+            <Setter Property="Height" Value="32" />
+            <Setter Property="MinWidth" Value="88" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.accent:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource AccentHoverBrush}" />
+        </Style>
+        <Style Selector="Button.accent:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource AccentPressedBrush}" />
+        </Style>
+
+        <!-- 标准按钮：背景与状态由 FluentTheme 负责，这里只规定尺寸 -->
+        <Style Selector="Button.secondary">
+            <Setter Property="Height" Value="32" />
+            <Setter Property="MinWidth" Value="88" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <!-- 破坏性操作按钮 -->
+        <Style Selector="Button.danger">
+            <Setter Property="Height" Value="32" />
+            <Setter Property="MinWidth" Value="88" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="Background" Value="{StaticResource DangerBrush}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.danger:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource DangerHoverBrush}" />
+        </Style>
+
+        <!-- 工具栏轻量按钮：SubtleFillColor 语义 -->
+        <Style Selector="Button.tool">
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.tool:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource NavItemHoverBrush}" />
+        </Style>
+        <Style Selector="Button.tool:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource ControlPressedBrush}" />
+        </Style>
+
+        <!-- 表格表头：Windows 11 ListView Header 语义 -->
+        <Style Selector="DataGridColumnHeader">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Padding" Value="12,8" />
+        </Style>
     </Application.Styles>
 </Application>

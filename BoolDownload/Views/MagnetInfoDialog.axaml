@@ -4,72 +4,83 @@
         xmlns:ic="using:FluentIcons.Avalonia"
         x:Class="BoolDownload.Views.MagnetInfoDialog"
         x:DataType="vm:MagnetInfoViewModel"
-        Title="磁力链接下载信息"
-        Width="600"
+        Title="{DynamicResource Loc_Title_MagnetInfo}"
+        Width="620"
         SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
-        CanResize="False">
+        CanResize="False"
+        Background="{DynamicResource DialogBackgroundBrush}">
     <Design.DataContext>
         <vm:MagnetInfoViewModel />
     </Design.DataContext>
 
-    <StackPanel Margin="20" Spacing="16">
-        <Grid ColumnDefinitions="80,*" ColumnSpacing="10">
-            <TextBlock Text="磁力链接" VerticalAlignment="Center" />
-            <TextBox Grid.Column="1" Text="{Binding MagnetUrl}"
-                     PlaceholderText="magnet:?xt=urn:btih:..." IsReadOnly="True" />
-        </Grid>
+    <StackPanel Margin="24,20" Spacing="16">
+        <StackPanel Spacing="6">
+            <TextBlock Classes="caption" Text="{DynamicResource Loc_Field_Magnet}" />
+            <TextBox Text="{Binding MagnetUrl}"
+                     IsReadOnly="True"
+                     PlaceholderText="magnet:?xt=urn:btih:..." />
+        </StackPanel>
 
-        <TextBlock Text="{Binding TorrentName, StringFormat='种子名称：{0}'}"
-                   FontWeight="SemiBold" TextWrapping="Wrap" />
+        <StackPanel Spacing="2">
+            <TextBlock Text="{Binding TorrentName}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap" />
+            <TextBlock Classes="caption" Text="{DynamicResource Loc_Info_Files}" />
+        </StackPanel>
 
-        <TextBlock Text="包含的文件及文件夹："
-                   FontSize="12"
-                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+        <Border CornerRadius="8"
+                Background="{DynamicResource CardBackgroundBrush}"
+                BorderBrush="{DynamicResource DividerBrush}"
+                BorderThickness="1"
+                ClipToBounds="True">
+            <DataGrid ItemsSource="{Binding Files}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      MaxHeight="300"
+                      Background="Transparent"
+                      BorderThickness="0"
+                      GridLinesVisibility="Horizontal"
+                      HorizontalGridLinesBrush="{DynamicResource DividerBrush}"
+                      VerticalScrollBarVisibility="Auto">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="{DynamicResource Loc_Col_Path}" Binding="{Binding Path}" Width="*" />
+                    <DataGridTextColumn Header="{DynamicResource Loc_Col_Size}" Binding="{Binding SizeText}" Width="100" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
 
-        <DataGrid ItemsSource="{Binding Files}"
-                  AutoGenerateColumns="False"
-                  IsReadOnly="True"
-                  MaxHeight="300"
-                  VerticalScrollBarVisibility="Auto">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="文件 / 文件夹" Binding="{Binding Path}" Width="*" />
-                <DataGridTextColumn Header="大小" Binding="{Binding SizeText}" Width="100" />
-            </DataGrid.Columns>
-        </DataGrid>
-
-        <Grid ColumnDefinitions="80,*" ColumnSpacing="10">
-            <TextBlock Text="保存位置" VerticalAlignment="Center" />
-            <Grid Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+        <StackPanel Spacing="6">
+            <TextBlock Classes="caption" Text="{DynamicResource Loc_Field_SavePath}" />
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                 <ComboBox ItemsSource="{Binding Folders}"
                           SelectedItem="{Binding SelectedFolder}" />
-                <Button Grid.Column="1" Click="OnBrowseFolder"
-                        ToolTip.Tip="选择保存位置" Padding="10,6"
-                        VerticalAlignment="Stretch">
+                <Button Grid.Column="1"
+                        Classes="secondary"
+                        MinWidth="0"
+                        Click="OnBrowseFolder"
+                        ToolTip.Tip="{DynamicResource Loc_Tip_ChooseSavePath}">
                     <ic:FluentIcon Icon="FolderOpen" IconVariant="Regular" FontSize="16" />
                 </Button>
             </Grid>
-        </Grid>
+        </StackPanel>
 
-        <Grid ColumnDefinitions="80,*" ColumnSpacing="10">
-            <TextBlock Text="最大连接数" VerticalAlignment="Center" />
-            <NumericUpDown Grid.Column="1"
-                           Minimum="1" Maximum="300" Increment="1"
+        <StackPanel Spacing="6">
+            <TextBlock Classes="caption" Text="{DynamicResource Loc_Field_MaxConnections}" />
+            <NumericUpDown Minimum="1" Maximum="300" Increment="1"
                            Value="{Binding MaxConnections}"
                            HorizontalAlignment="Stretch" />
-        </Grid>
+        </StackPanel>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-            <Button IsDefault="True" Click="OnOk" Padding="16,6">
-                <StackPanel Orientation="Horizontal" Spacing="6">
-                    <ic:FluentIcon Icon="Checkmark" IconVariant="Regular" FontSize="14" VerticalAlignment="Center" />
-                    <TextBlock Text="确定" VerticalAlignment="Center" />
-                </StackPanel>
-            </Button>
-            <Button IsCancel="True" Click="OnCancel" Padding="16,6">
+            <Button Classes="secondary" IsCancel="True" Click="OnCancel">
                 <StackPanel Orientation="Horizontal" Spacing="6">
                     <ic:FluentIcon Icon="Dismiss" IconVariant="Regular" FontSize="14" VerticalAlignment="Center" />
-                    <TextBlock Text="取消" VerticalAlignment="Center" />
+                    <TextBlock Text="{DynamicResource Loc_Btn_Cancel}" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+            <Button Classes="accent" IsDefault="True" Click="OnOk">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <ic:FluentIcon Icon="Checkmark" IconVariant="Regular" FontSize="14" Foreground="White" VerticalAlignment="Center" />
+                    <TextBlock Text="{DynamicResource Loc_Btn_Ok}" VerticalAlignment="Center" />
                 </StackPanel>
             </Button>
         </StackPanel>

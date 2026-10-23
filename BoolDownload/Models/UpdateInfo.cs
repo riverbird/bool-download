@@ -5,7 +5,7 @@ namespace BoolDownload.Models;
 
 public static class AppVersion
 {
-    public const int VersionCode = 202609151;
+    public const int VersionCode = 202610241;
 }
 
 public class UpdateInfo

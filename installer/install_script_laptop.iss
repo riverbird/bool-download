@@ -7,7 +7,7 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{7EA4BC15-9C2A-4214-9906-8186070BDE6E}
 AppName=布尔下载
-AppVersion=1.3.0
+AppVersion=1.4.0
 ;AppVerName={cm:NameAndVersion,BoollDownload,1.0}
 AppPublisher=Superiot, Inc.
 AppPublisherURL=http://www.10qu.com/
@@ -41,7 +41,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "D:\project\bool-download\BoolDownload.Desktop\bin\Release\net10.0\win-x64\publish\BoolDownload.Desktop.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "D:\project\bool-download\BoolDownload.Desktop\bin\Release\net10.0\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "D:\project\bool-download\BoolDownload.Desktop\bin\Release\net10.0\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs;Excludes: "*.pdb"
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files.
 
 [Icons]

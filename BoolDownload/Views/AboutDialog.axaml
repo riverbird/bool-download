@@ -1,84 +1,98 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="BoolDownload.Views.AboutDialog"
-        Title="关于 BoolDownload"
-        Width="560"
+        Title="{DynamicResource Loc_Title_About}"
+        Width="580"
         SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
-        CanResize="False">
-    <StackPanel Margin="24" Spacing="16">
+        CanResize="False"
+        Background="{DynamicResource DialogBackgroundBrush}">
+    <StackPanel Margin="24,20" Spacing="16">
         <!-- Logo + 软件名称 -->
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="12">
             <Image Source="/Assets/Icon.png" Width="56" Height="56" />
             <StackPanel VerticalAlignment="Center" Spacing="2">
-                <TextBlock Text="BoolDownload" FontSize="26" FontWeight="SemiBold" />
-                <TextBlock x:Name="VersionText" FontSize="12" Foreground="Gray" />
+                <TextBlock Text="BoolDownload" FontSize="24" FontWeight="SemiBold" />
+                <TextBlock x:Name="VersionText" Classes="caption" />
             </StackPanel>
         </StackPanel>
 
         <TabControl>
             <!-- 软件信息 / 第三方库 / 系统运行环境 -->
-            <TabItem Header="软件信息">
-                <StackPanel Margin="0,8,0,0" Spacing="4">
-                    <TextBlock FontSize="15" FontWeight="SemiBold" Text="软件信息" />
-                    <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto"
-                          ColumnSpacing="8" RowSpacing="4" Margin="0,4,0,8">
-                        <TextBlock Grid.Row="0" Text="产品名称" Foreground="Gray" />
-                        <TextBlock Grid.Row="0" Grid.Column="1" Text="BoolDownload" />
-                        <TextBlock Grid.Row="1" Text="版本" Foreground="Gray" />
-                        <TextBlock Grid.Row="1" Grid.Column="1" x:Name="SoftwareVersionText" />
-                        <TextBlock Grid.Row="2" Text="版权" Foreground="Gray" />
-                        <TextBlock Grid.Row="2" Grid.Column="1" x:Name="CopyrightText" />
-                        <TextBlock Grid.Row="3" Text="许可证" Foreground="Gray" />
-                        <TextBlock Grid.Row="3" Grid.Column="1" x:Name="LicenseText" />
-                        <TextBlock Grid.Row="4" Text="引擎" Foreground="Gray" />
-                        <TextBlock Grid.Row="4" Grid.Column="1" x:Name="EngineText" />
-                    </Grid>
+            <TabItem Header="{DynamicResource Loc_About_SoftwareInfo}">
+                <ScrollViewer MaxHeight="380" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="0,10,0,0" Spacing="12">
+                        <StackPanel Spacing="6">
+                            <TextBlock FontSize="15" FontWeight="SemiBold" Text="{DynamicResource Loc_About_SoftwareInfo}" />
+                            <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+                                  ColumnSpacing="8" RowSpacing="6">
+                                <TextBlock Grid.Row="0" Classes="caption" Text="{DynamicResource Loc_About_Product}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="BoolDownload" FontSize="13" />
+                                <TextBlock Grid.Row="1" Classes="caption" Text="{DynamicResource Loc_About_Version}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" x:Name="SoftwareVersionText" FontSize="13" />
+                                <TextBlock Grid.Row="2" Classes="caption" Text="{DynamicResource Loc_About_Copyright}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" x:Name="CopyrightText" FontSize="13" />
+                                <TextBlock Grid.Row="3" Classes="caption" Text="{DynamicResource Loc_About_License}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" x:Name="LicenseText" FontSize="13" />
+                                <TextBlock Grid.Row="4" Classes="caption" Text="{DynamicResource Loc_About_Engine}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Row="4" Grid.Column="1" x:Name="EngineText" FontSize="13" />
+                            </Grid>
+                        </StackPanel>
 
-                    <Separator />
+                        <Border Height="1" Background="{DynamicResource DividerBrush}" />
 
-                    <!-- 第三方库及版本 -->
-                    <TextBlock FontSize="15" FontWeight="SemiBold" Text="第三方库" />
-                    <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto"
-                          ColumnSpacing="8" RowSpacing="4" Margin="0,4,0,8">
-                        <TextBlock Grid.Row="0" Text="Avalonia" Foreground="Gray" />
-                        <TextBlock Grid.Row="0" Grid.Column="1" x:Name="AvaloniaVersionText" />
-                        <TextBlock Grid.Row="1" Text="Xunlei.Open.DlSdk" Foreground="Gray" />
-                        <TextBlock Grid.Row="1" Grid.Column="1" x:Name="XunleiSdkVersionText" />
-                        <TextBlock Grid.Row="2" Text="Downloader" Foreground="Gray" />
-                        <TextBlock Grid.Row="2" Grid.Column="1" x:Name="DownloaderVersionText" />
-                        <TextBlock Grid.Row="3" Text="MonoTorrent" Foreground="Gray" />
-                        <TextBlock Grid.Row="3" Grid.Column="1" x:Name="MonoTorrentVersionText" />
-                    </Grid>
+                        <!-- 第三方库及版本 -->
+                        <StackPanel Spacing="6">
+                            <TextBlock FontSize="15" FontWeight="SemiBold" Text="{DynamicResource Loc_About_ThirdParty}" />
+                            <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto"
+                                  ColumnSpacing="8" RowSpacing="6">
+                                <TextBlock Grid.Row="0" Classes="caption" Text="Avalonia" VerticalAlignment="Center" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" x:Name="AvaloniaVersionText" FontSize="13" />
+                                <TextBlock Grid.Row="1" Classes="caption" Text="Xunlei.Open.DlSdk" VerticalAlignment="Center" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" x:Name="XunleiSdkVersionText" FontSize="13" />
+                                <TextBlock Grid.Row="2" Classes="caption" Text="Downloader" VerticalAlignment="Center" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" x:Name="DownloaderVersionText" FontSize="13" />
+                                <TextBlock Grid.Row="3" Classes="caption" Text="MonoTorrent" VerticalAlignment="Center" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" x:Name="MonoTorrentVersionText" FontSize="13" />
+                            </Grid>
+                        </StackPanel>
 
-                    <Separator />
+                        <Border Height="1" Background="{DynamicResource DividerBrush}" />
 
-                    <TextBlock FontSize="15" FontWeight="SemiBold" Text="系统运行环境" />
-                    <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto,Auto,Auto"
-                          ColumnSpacing="8" RowSpacing="4" Margin="0,4,0,0">
-                        <TextBlock Grid.Row="0" Text="操作系统" Foreground="Gray" />
-                        <TextBlock Grid.Row="0" Grid.Column="1" x:Name="OsText" />
-                        <TextBlock Grid.Row="1" Text=".NET 运行时" Foreground="Gray" />
-                        <TextBlock Grid.Row="1" Grid.Column="1" x:Name="RuntimeText" />
-                        <TextBlock Grid.Row="2" Text="体系结构" Foreground="Gray" />
-                        <TextBlock Grid.Row="2" Grid.Column="1" x:Name="ArchitectureText" />
-                        <TextBlock Grid.Row="3" Text="工作目录" Foreground="Gray" />
-                        <TextBlock Grid.Row="3" Grid.Column="1" x:Name="BaseDirectoryText" TextWrapping="Wrap" />
-                    </Grid>
-                </StackPanel>
+                        <StackPanel Spacing="6">
+                            <TextBlock FontSize="15" FontWeight="SemiBold" Text="{DynamicResource Loc_About_System}" />
+                            <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto,Auto,Auto"
+                                  ColumnSpacing="8" RowSpacing="6">
+                                <TextBlock Grid.Row="0" Classes="caption" Text="{DynamicResource Loc_About_Os}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" x:Name="OsText" FontSize="13" TextWrapping="Wrap" />
+                                <TextBlock Grid.Row="1" Classes="caption" Text="{DynamicResource Loc_About_Runtime}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" x:Name="RuntimeText" FontSize="13" TextWrapping="Wrap" />
+                                <TextBlock Grid.Row="2" Classes="caption" Text="{DynamicResource Loc_About_Arch}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" x:Name="ArchitectureText" FontSize="13" />
+                                <TextBlock Grid.Row="3" Classes="caption" Text="{DynamicResource Loc_About_WorkDir}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" x:Name="BaseDirectoryText" FontSize="13" TextWrapping="Wrap" />
+                            </Grid>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
             </TabItem>
 
             <!-- Release Note -->
-            <TabItem Header="更新日志">
+            <TabItem Header="{DynamicResource Loc_About_UpdateLog}">
                 <TextBox x:Name="ReleaseNoteText"
                          IsReadOnly="True"
                          AcceptsReturn="True"
                          TextWrapping="Wrap"
-                         Height="260"
-                         Margin="0,8,0,0" />
+                         Height="320"
+                         Margin="0,10,0,0" />
             </TabItem>
         </TabControl>
 
-        <Button Content="确定" IsDefault="True" HorizontalAlignment="Center" MinWidth="100" Click="OnOk" />
+        <Button Classes="accent"
+                Content="{DynamicResource Loc_Btn_Ok}"
+                IsDefault="True"
+                MinWidth="100"
+                HorizontalAlignment="Center"
+                Click="OnOk" />
     </StackPanel>
 </Window>

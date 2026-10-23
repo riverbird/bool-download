@@ -65,7 +65,7 @@ public partial class NewDownloadDialog : Window
             folders = await topLevel.StorageProvider.OpenFolderPickerAsync(
                 new FolderPickerOpenOptions
                 {
-                    Title = "选择保存位置",
+                    Title = Localization.T("Loc_Tip_ChooseSavePath"),
                     AllowMultiple = false,
                 });
         }

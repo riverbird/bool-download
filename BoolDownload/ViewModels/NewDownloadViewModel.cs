@@ -24,9 +24,9 @@ public partial class NewDownloadViewModel : ViewModelBase
     /// <summary>下载引擎下拉选项，默认为第 1 项“迅雷开放下载引擎”。</summary>
     public string[] EngineOptions { get; } =
     {
-        "迅雷开放下载引擎",
-        "原生下载引擎(HttpClient)",
-        "原生下载引擎(Downloader)",
+        Localization.T("Loc_Engine_Xunlei"),
+        Localization.T("Loc_Engine_Native"),
+        Localization.T("Loc_Engine_Downloader"),
     };
 
     [ObservableProperty] public partial int SelectedEngineIndex { get; set; }

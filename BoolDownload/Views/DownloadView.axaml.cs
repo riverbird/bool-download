@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -14,15 +15,51 @@ using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 using BoolDownload.Models;
+using BoolDownload.Services;
 using BoolDownload.ViewModels;
 
 namespace BoolDownload.Views;
 
 public partial class DownloadView : ContentPage
 {
+    private DownloadViewModel? _viewModel;
+    private DataGridColumn? _speedColumn;
+
+    /// <summary>“速度”列在 DownloadGrid.Columns 中的下标。</summary>
+    private const int SpeedColumnIndex = 5;
+
     public DownloadView()
     {
         InitializeComponent();
+        DataContextChanged += OnDataContextChanged;
+    }
+
+    private void OnDataContextChanged(object? sender, EventArgs e)
+    {
+        if (_viewModel is not null)
+            _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+
+        _viewModel = DataContext as DownloadViewModel;
+        if (_viewModel is not null)
+            _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+
+        UpdateSpeedColumnVisibility();
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(DownloadViewModel.SelectedStatus))
+            UpdateSpeedColumnVisibility();
+    }
+
+    /// <summary>“速度”列仅在“下载中”列表显示，已完成列表不显示。</summary>
+    private void UpdateSpeedColumnVisibility()
+    {
+        if (_speedColumn is null && DownloadGrid.Columns.Count > SpeedColumnIndex)
+            _speedColumn = DownloadGrid.Columns[SpeedColumnIndex];
+
+        if (_speedColumn is not null)
+            _speedColumn.IsVisible = _viewModel?.SelectedStatus?.Name == "下载中";
     }
 
     private void OnCellsPointerPressed(object? sender, DataGridCellPointerPressedEventArgs e)
@@ -48,6 +85,12 @@ public partial class DownloadView : ContentPage
             new AboutDialog().ShowDialog(owner);
     }
 
+    private void OnOptions(object? sender, RoutedEventArgs e)
+    {
+        if (TopLevel.GetTopLevel(this) is Window owner)
+            new OptionsDialog().ShowDialog(owner);
+    }
+
     private void OnAccelerator(object? sender, RoutedEventArgs e)
     {
         if (TopLevel.GetTopLevel(this) is Window owner)
@@ -68,34 +111,34 @@ public partial class DownloadView : ContentPage
         }
         catch (Exception ex)
         {
-            await ShowMessageDialog("检查更新", "获取更新信息失败: " + ex.Message);
+            await ShowMessageDialog(Localization.T("Loc_Menu_CheckUpdate"), Localization.T("Loc_Msg_CheckUpdateFailed") + ex.Message);
             return;
         }
 
         if (updateInfo == null)
         {
-            await ShowMessageDialog("检查更新", "更新信息解析失败。");
+            await ShowMessageDialog(Localization.T("Loc_Menu_CheckUpdate"), Localization.T("Loc_Msg_UpdateParseFailed"));
             return;
         }
 
         var downloadKey = GetPlatformDownloadKey();
         if (downloadKey == null)
         {
-            await ShowMessageDialog("检查更新", "不支持的操作系统或架构。");
+            await ShowMessageDialog(Localization.T("Loc_Menu_CheckUpdate"), Localization.T("Loc_Msg_UnsupportedOs"));
             return;
         }
 
         var platformInfo = updateInfo.GetPlatformInfo(downloadKey);
         if (platformInfo == null)
         {
-            await ShowMessageDialog("检查更新", "未找到对应平台的更新信息。");
+            await ShowMessageDialog(Localization.T("Loc_Menu_CheckUpdate"), Localization.T("Loc_Msg_NoPlatformUpdate"));
             return;
         }
 
         var localVersionCode = AppVersion.VersionCode;
         if (localVersionCode >= platformInfo.VersionCode)
         {
-            await ShowMessageDialog("检查更新", "您现在使用的是最新版本!");
+            await ShowMessageDialog(Localization.T("Loc_Menu_CheckUpdate"), Localization.T("Loc_Msg_UpdateLatest"));
             return;
         }
 
@@ -163,6 +206,8 @@ public partial class DownloadView : ContentPage
         return false;
     }
 
+    private IBrush? ThemeBrush(string key) => this.FindResource(key) as IBrush;
+
     private async Task ShowMessageDialog(string title, string message)
     {
         if (TopLevel.GetTopLevel(this) is not Window owner) return;
@@ -174,15 +219,18 @@ public partial class DownloadView : ContentPage
             Height = 180,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             CanResize = false,
-            Content = new TextBlock
-            {
-                Text = message,
-                Margin = new Thickness(24, 24, 24, 0),
-                TextWrapping = TextWrapping.Wrap
-            }
+            Background = ThemeBrush("DialogBackgroundBrush")
         };
 
-        var okButton = new Button { Content = "确定", HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 12, 24, 24), MinWidth = 80 };
+        var okButton = new Button
+        {
+            Content = Localization.T("Loc_Btn_Ok"),
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(0, 12, 24, 20),
+            MinWidth = 88,
+            Height = 32
+        };
+        okButton.Classes.Add("accent");
         okButton.Click += (_, _) => dialog.Close();
         var panel = new DockPanel();
         DockPanel.SetDock(okButton, Dock.Bottom);
@@ -190,7 +238,7 @@ public partial class DownloadView : ContentPage
         panel.Children.Add(new TextBlock
         {
             Text = message,
-            Margin = new Thickness(24, 24, 24, 0),
+            Margin = new Thickness(24, 20, 24, 0),
             TextWrapping = TextWrapping.Wrap
         });
         dialog.Content = panel;
@@ -205,10 +253,10 @@ public partial class DownloadView : ContentPage
 
         var titleText = new TextBlock
         {
-            Text = info.UpdatePrompt?.Title ?? "有新版本可用",
+            Text = info.UpdatePrompt?.Title ?? Localization.T("Loc_Msg_NewVersionAvailable"),
             FontSize = 18,
             FontWeight = FontWeight.SemiBold,
-            Margin = new Thickness(24, 24, 24, 8),
+            Margin = new Thickness(24, 20, 24, 8),
             TextWrapping = TextWrapping.Wrap
         };
 
@@ -233,7 +281,7 @@ public partial class DownloadView : ContentPage
         var line1 = new Border
         {
             Height = 1,
-            Background = new SolidColorBrush(Color.FromRgb(0xE0, 0xE0, 0xE0)),
+            Background = ThemeBrush("DividerBrush"),
             Margin = new Thickness(24, 0, 24, 8)
         };
 
@@ -242,39 +290,44 @@ public partial class DownloadView : ContentPage
             Text = info.Notes ?? "",
             Margin = new Thickness(24, 0, 24, 8),
             TextWrapping = TextWrapping.Wrap,
-            Foreground = new SolidColorBrush(Color.FromRgb(0x66, 0x66, 0x66))
+            Foreground = ThemeBrush("MutedTextBrush")
         };
 
         var line2 = new Border
         {
             Height = 1,
-            Background = new SolidColorBrush(Color.FromRgb(0xE0, 0xE0, 0xE0)),
+            Background = ThemeBrush("DividerBrush"),
             Margin = new Thickness(24, 0, 24, 12)
         };
 
         var upgradeButton = new Button
         {
-            Content = "升级",
-            MinWidth = 80,
+            Content = Localization.T("Loc_Btn_Upgrade"),
+            MinWidth = 88,
+            Height = 32,
             HorizontalAlignment = HorizontalAlignment.Left,
-            Margin = new Thickness(24, 0, 8, 24)
+            Margin = new Thickness(24, 0, 8, 20)
         };
+        upgradeButton.Classes.Add("accent");
 
         var cancelButton = new Button
         {
-            Content = "取消",
-            MinWidth = 80,
+            Content = Localization.T("Loc_Btn_Cancel"),
+            MinWidth = 88,
+            Height = 32,
             HorizontalAlignment = HorizontalAlignment.Right,
-            Margin = new Thickness(8, 0, 24, 24)
+            Margin = new Thickness(8, 0, 24, 20)
         };
+        cancelButton.Classes.Add("secondary");
 
         var dialog = new Window
         {
-            Title = "检查更新",
+            Title = Localization.T("Loc_Menu_CheckUpdate"),
             Width = 500,
             Height = 520,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            CanResize = false
+            CanResize = false,
+            Background = ThemeBrush("DialogBackgroundBrush")
         };
 
         upgradeButton.Click += async (_, _) =>

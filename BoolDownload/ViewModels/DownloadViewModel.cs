@@ -3,7 +3,6 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Input.Platform;
 using Avalonia.Platform.Storage;
-using Avalonia.Styling;
 using MonoTorrent;
 using Avalonia.Threading;
 using BoolDownload.Services;
@@ -31,6 +30,11 @@ public partial class StatusItem : ViewModelBase
     [ObservableProperty] public partial Icon Icon { get; set; }
     [ObservableProperty] public partial int Count { get; set; }
     public Func<DownloadItem, bool>? Matches { get; init; }
+
+    /// <summary>分类的界面显示名，随语言切换刷新。</summary>
+    public string DisplayName => Localization.StatusText(Name);
+
+    public void RefreshDisplayName() => OnPropertyChanged(nameof(DisplayName));
 }
 
 public partial class DownloadItem : ViewModelBase
@@ -40,12 +44,20 @@ public partial class DownloadItem : ViewModelBase
     [ObservableProperty] public partial string Done { get; set; }
     [ObservableProperty] public partial string Size { get; set; }
     [ObservableProperty] public partial double Progress { get; set; }
+    [ObservableProperty] public partial string Speed { get; set; } = "0 B/s";
     [ObservableProperty] public partial DateTime AddedTime { get; set; }
     [ObservableProperty] public partial string Url { get; set; } = string.Empty;
     [ObservableProperty] public partial string SavePath { get; set; } = string.Empty;
     public ulong TaskId { get; set; }
     public int MaxConnections { get; set; }
     public DownloadEngine Engine { get; set; }
+
+    /// <summary>状态的界面显示名；Status 保持内部中文状态值不变。</summary>
+    public string StatusLabel => Localization.StatusText(Status);
+
+    partial void OnStatusChanged(string value) => OnPropertyChanged(nameof(StatusLabel));
+
+    public void RefreshStatusLabel() => OnPropertyChanged(nameof(StatusLabel));
 }
 
 public partial class DownloadViewModel : ViewModelBase
@@ -82,9 +94,19 @@ public partial class DownloadViewModel : ViewModelBase
     public DownloadViewModel()
     {
         SelectedStatus = StatusItems[0];
+        Localization.LanguageChanged += (_, _) => RefreshLocalizedTexts();
         // 不使用 ConfigureAwait(false)：确保恢复流程的后续操作回到 UI 线程，
         // 满足 Avalonia 的 UI 线程规则。
         _ = LoadSavedTasksAsync();
+    }
+
+    /// <summary>语言切换后刷新所有由状态值派生的显示文本。</summary>
+    private void RefreshLocalizedTexts()
+    {
+        foreach (var status in StatusItems)
+            status.RefreshDisplayName();
+        foreach (var item in Items)
+            item.RefreshStatusLabel();
     }
 
     partial void OnSelectedStatusChanged(StatusItem? value) => Refresh();
@@ -257,6 +279,22 @@ public partial class DownloadViewModel : ViewModelBase
         if (owner is null) return;
 
         var dialogVm = new NewDownloadViewModel();
+
+        // 读取剪切板内容，若为以 http/https/ftp/ftps/thunder 开头的下载链接则预填。
+        if (owner.Clipboard is not null)
+        {
+            try
+            {
+                var clip = await owner.Clipboard.TryGetTextAsync();
+                if (!string.IsNullOrWhiteSpace(clip) && IsDownloadLink(clip))
+                    dialogVm.Url = clip!.Trim();
+            }
+            catch
+            {
+                // 读取剪切板失败时忽略，对话框保持空白。
+            }
+        }
+
         var dialog = new NewDownloadDialog { DataContext = dialogVm };
         var ok = await dialog.ShowDialog<bool>(owner);
         if (!ok) return;
@@ -360,6 +398,15 @@ public partial class DownloadViewModel : ViewModelBase
         }
     }
 
+    /// <summary>判断给定文本是否为下载链接（以 http/https/ftp/ftps/thunder 开头，大小写不敏感）。</summary>
+    private static bool IsDownloadLink(string text)
+    {
+        var t = text.Trim();
+        return t.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+            || t.StartsWith("ftp", StringComparison.OrdinalIgnoreCase)
+            || t.StartsWith("thunder", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static string? TryGetFileNameFromUrl(string url)
     {
         try
@@ -386,6 +433,23 @@ public partial class DownloadViewModel : ViewModelBase
         if (owner is null) return;
 
         var dialogVm = new NewMagnetLinkViewModel();
+
+        // 读取剪切板内容，若为 magnet 磁力链接则预填。
+        if (owner.Clipboard is not null)
+        {
+            try
+            {
+                var clip = await owner.Clipboard.TryGetTextAsync();
+                if (!string.IsNullOrWhiteSpace(clip)
+                    && clip.TrimStart().StartsWith("magnet:", StringComparison.OrdinalIgnoreCase))
+                    dialogVm.MagnetUrl = clip.Trim();
+            }
+            catch
+            {
+                // 读取剪切板失败时忽略，对话框保持空白。
+            }
+        }
+
         var dialog = new NewMagnetLinkDialog { DataContext = dialogVm };
         var ok = await dialog.ShowDialog<bool>(owner);
         if (!ok) return;
@@ -395,7 +459,7 @@ public partial class DownloadViewModel : ViewModelBase
         var item = new DownloadItem
         {
             Status = "创建中",
-            Name = string.IsNullOrWhiteSpace(dialogVm.FileName) ? "磁力链接任务" : dialogVm.FileName,
+            Name = string.IsNullOrWhiteSpace(dialogVm.FileName) ? Localization.T("Loc_Msg_MagnetTaskName") : dialogVm.FileName,
             Url = dialogVm.MagnetUrl.Trim(),
             SavePath = dialogVm.SelectedFolder,
             Done = "0 B",
@@ -459,7 +523,7 @@ public partial class DownloadViewModel : ViewModelBase
 
         var infoVm = new MagnetInfoViewModel
         {
-            TorrentName = name ?? "磁力链接任务",
+            TorrentName = name ?? Localization.T("Loc_Msg_MagnetTaskName"),
             MagnetUrl = item.Url,
             SelectedFolder = item.SavePath,
             MaxConnections = (decimal)item.MaxConnections,
@@ -520,11 +584,11 @@ public partial class DownloadViewModel : ViewModelBase
         {
             files = await owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
             {
-                Title = "打开BT种子文件",
+                Title = Localization.T("Loc_Picker_TorrentTitle"),
                 AllowMultiple = false,
                 FileTypeFilter = new[]
                 {
-                    new FilePickerFileType("BT种子文件") { Patterns = new[] { "*.torrent" } },
+                    new FilePickerFileType(Localization.T("Loc_Picker_TorrentFilter")) { Patterns = new[] { "*.torrent" } },
                 },
             });
         }
@@ -699,6 +763,128 @@ public partial class DownloadViewModel : ViewModelBase
 
         if (item.TaskId > 0)
             _service.StopTask(item.TaskId);
+    }
+
+    /// <summary>
+    /// 右键菜单“重新下载”：无论当前任务是下载中、已完成还是下载失败，
+    /// 均停止现有任务并清理残留文件，重置状态后按原引擎从头重新下载。
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanRedownload))]
+    private void Redownload()
+    {
+        if (SelectedItem is not { } item) return;
+        if (item.Status == "已删除") return;
+
+        // 停止当前正在进行的下载（如有）。
+        StopAndDispose(item);
+
+        // 清理已存在的分片与最终文件，确保从头重新下载。
+        switch (item.Engine)
+        {
+            case DownloadEngine.Native:
+                DeleteNativeFiles(item, deleteFinal: true);
+                break;
+            case DownloadEngine.Downloader:
+                DeleteDownloaderFiles(item, deleteFinal: true);
+                break;
+        }
+
+        // 重置任务状态。
+        item.Progress = 0;
+        item.Done = "0 B";
+        item.Size = "";
+        item.Speed = "0 B/s";
+        item.AddedTime = DateTime.Now;
+        item.Status = "创建中";
+
+        // 按原引擎重新创建并启动下载。
+        switch (item.Engine)
+        {
+            case DownloadEngine.Native:
+                StartNativeDownload(item, item.SavePath, item.Name, Math.Max(1, item.MaxConnections));
+                break;
+            case DownloadEngine.Downloader:
+                StartDownloaderDownload(item, item.SavePath, item.Name, Math.Max(1, item.MaxConnections));
+                break;
+            case DownloadEngine.Magnet:
+                StartMagnetDownload(item, item.SavePath, item.Name, item.MaxConnections);
+                break;
+            case DownloadEngine.Torrent:
+                StartTorrentDownload(item, item.SavePath, item.Name, item.MaxConnections);
+                break;
+            default:
+                // 迅雷引擎：重新创建任务并启动。
+                var (result, taskId) = _service.CreateTask(item.Url, item.SavePath, item.Name);
+                if (result != XLConstants.ErrorSuccess || taskId == 0)
+                {
+                    item.Status = "创建失败";
+                    break;
+                }
+
+                item.TaskId = taskId;
+                _activeTasks[taskId] = item;
+                item.Status = _service.StartTask(taskId) == XLConstants.ErrorSuccess
+                    ? "启动中"
+                    : "启动失败";
+                EnsureTimerRunning();
+                break;
+        }
+
+        Refresh();
+        RefreshCommandStates();
+        Save();
+    }
+
+    private bool CanRedownload()
+    {
+        if (SelectedItem is not { } item) return false;
+        return item.Status != "已删除";
+    }
+
+    /// <summary>停止并释放指定任务的下载对象（不移除列表条目）。</summary>
+    private void StopAndDispose(DownloadItem item)
+    {
+        if (item.Engine == DownloadEngine.Native)
+        {
+            if (_nativeDownloads.TryGetValue(item, out var download))
+            {
+                download.Pause();
+                _nativeDownloads.Remove(item);
+                download.Dispose();
+            }
+        }
+        else if (item.Engine == DownloadEngine.Downloader)
+        {
+            if (_downloaderDownloads.TryGetValue(item, out var downloader))
+            {
+                downloader.Pause();
+                _downloaderDownloads.Remove(item);
+                downloader.Dispose();
+            }
+        }
+        else if (item.Engine == DownloadEngine.Magnet)
+        {
+            if (_magnetDownloads.TryGetValue(item, out var magnet))
+            {
+                magnet.Pause();
+                _magnetDownloads.Remove(item);
+                magnet.Dispose();
+            }
+        }
+        else if (item.Engine == DownloadEngine.Torrent)
+        {
+            if (_torrentDownloads.TryGetValue(item, out var torrent))
+            {
+                torrent.Pause();
+                _torrentDownloads.Remove(item);
+                torrent.Dispose();
+            }
+        }
+        else if (item.TaskId > 0)
+        {
+            _service.StopTask(item.TaskId);
+            _activeTasks.Remove(item.TaskId);
+        }
     }
 
     private bool CanPause()
@@ -992,7 +1178,8 @@ public partial class DownloadViewModel : ViewModelBase
             if (item.Status is "创建中" or "等待")
                 item.Status = "下载中";
 
-            DownloadSpeed = FormatSpeed((ulong)Math.Max(0, progress.Speed));
+            item.Speed = FormatSpeed((ulong)Math.Max(0, progress.Speed));
+            DownloadSpeed = item.Speed;
             TrySaveProgress();
         });
     }
@@ -1021,6 +1208,8 @@ public partial class DownloadViewModel : ViewModelBase
                     item.Status = "下载失败";
                     break;
             }
+
+            item.Speed = "0 B/s";
 
             Refresh();
             RefreshCommandStates();
@@ -1104,7 +1293,8 @@ public partial class DownloadViewModel : ViewModelBase
             if (item.Status is "创建中" or "等待")
                 item.Status = "下载中";
 
-            DownloadSpeed = FormatSpeed((ulong)Math.Max(0, progress.Speed));
+            item.Speed = FormatSpeed((ulong)Math.Max(0, progress.Speed));
+            DownloadSpeed = item.Speed;
             TrySaveProgress();
         });
     }
@@ -1141,6 +1331,8 @@ public partial class DownloadViewModel : ViewModelBase
                     item.Status = "下载失败";
                     break;
             }
+
+            item.Speed = "0 B/s";
 
             // 所有任务均不在下载时，下载速度置 0。
             if (!Items.Any(IsActiveDownload))
@@ -1222,7 +1414,8 @@ public partial class DownloadViewModel : ViewModelBase
             if (item.Status is "创建中" or "等待")
                 item.Status = "下载中";
 
-            DownloadSpeed = FormatSpeed((ulong)Math.Max(0, progress.Speed));
+            item.Speed = FormatSpeed((ulong)Math.Max(0, progress.Speed));
+            DownloadSpeed = item.Speed;
             TrySaveProgress();
         });
     }
@@ -1262,6 +1455,8 @@ public partial class DownloadViewModel : ViewModelBase
                     item.Status = "下载失败";
                     break;
             }
+
+            item.Speed = "0 B/s";
 
             // 所有任务均不在下载时，下载速度置 0。
             if (!Items.Any(IsActiveDownload))
@@ -1370,7 +1565,8 @@ public partial class DownloadViewModel : ViewModelBase
                 item.Status = "下载中";
             }
 
-            DownloadSpeed = FormatSpeed((ulong)Math.Max(0, progress.Speed));
+            item.Speed = FormatSpeed((ulong)Math.Max(0, progress.Speed));
+            DownloadSpeed = item.Speed;
             TrySaveProgress();
         });
     }
@@ -1411,6 +1607,8 @@ public partial class DownloadViewModel : ViewModelBase
                     break;
             }
 
+            item.Speed = "0 B/s";
+
             // 所有任务均不在下载时，下载速度置 0。
             if (!Items.Any(IsActiveDownload))
                 DownloadSpeed = "0 B/s";
@@ -1440,17 +1638,6 @@ public partial class DownloadViewModel : ViewModelBase
         {
             // Ignore cleanup failures.
         }
-    }
-
-    [RelayCommand]
-    private void ToggleTheme()
-    {
-        var app = Application.Current;
-        if (app is null) return;
-
-        app.RequestedThemeVariant = app.RequestedThemeVariant == ThemeVariant.Dark
-            ? ThemeVariant.Light
-            : ThemeVariant.Dark;
     }
 
     [RelayCommand]
@@ -1583,6 +1770,7 @@ public partial class DownloadViewModel : ViewModelBase
     {
         StartCommand.NotifyCanExecuteChanged();
         PauseCommand.NotifyCanExecuteChanged();
+        RedownloadCommand.NotifyCanExecuteChanged();
         OpenFileCommand.NotifyCanExecuteChanged();
     }
 
@@ -1636,6 +1824,8 @@ public partial class DownloadViewModel : ViewModelBase
 
         if (state.TotalSize > 0)
             item.Progress = (double)state.DownloadedSize / state.TotalSize * 100;
+
+        item.Speed = FormatSpeed(state.Speed);
 
         item.Status = state.StateCode switch
         {

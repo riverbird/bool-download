@@ -3,7 +3,7 @@
         <TargetFramework>net10.0</TargetFramework>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
-        <Version>1.3.0</Version>
+        <Version>1.4.0</Version>
     </PropertyGroup>
 
     <ItemGroup>
@@ -21,8 +21,8 @@
         </PackageReference>
         <PackageReference Include="CommunityToolkit.Mvvm"/>
         <PackageReference Include="Downloader"/>
-        <PackageReference Include="FluentAvaloniaUI" />
         <PackageReference Include="FluentIcons.Avalonia"/>
+        <PackageReference Include="Microsoft.Data.Sqlite"/>
         <PackageReference Include="MonoTorrent"/>
         <PackageReference Include="Xunlei.Open.DlSdk" />
         <PackageReference Include="Xunlei.Open.DlSdk.Native.linux-x64" />

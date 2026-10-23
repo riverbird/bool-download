@@ -2,27 +2,39 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ic="using:FluentIcons.Avalonia"
         x:Class="BoolDownload.Views.DeleteConfirmDialog"
-        Title="删除下载任务"
-        Width="440"
+        Title="{DynamicResource Loc_Title_DeleteConfirm}"
+        Width="460"
         SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
-        CanResize="False">
-    <StackPanel Margin="24" Spacing="20">
+        CanResize="False"
+        Background="{DynamicResource DialogBackgroundBrush}">
+    <StackPanel Margin="24,20" Spacing="20">
         <StackPanel Orientation="Horizontal" Spacing="12">
-            <ic:FluentIcon Icon="Delete" IconVariant="Regular" FontSize="32" VerticalAlignment="Top" />
-            <StackPanel Spacing="6">
-                <TextBlock Text="确定要删除选中的下载任务吗？"
-                           FontSize="15"
+            <Border Width="40"
+                    Height="40"
+                    CornerRadius="20"
+                    Background="#1AC42B1C"
+                    VerticalAlignment="Top">
+                <ic:FluentIcon Icon="Delete"
+                               IconVariant="Regular"
+                               FontSize="20"
+                               Foreground="{StaticResource DangerBrush}"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center" />
+            </Border>
+            <StackPanel Spacing="4" VerticalAlignment="Center">
+                <TextBlock Text="{DynamicResource Loc_Del_Question}"
+                           FontSize="16"
                            FontWeight="SemiBold" />
-                <TextBlock Text="删除后将同时删除该任务已下载的文件，且无法恢复。"
-                           Foreground="Gray"
+                <TextBlock Classes="caption"
+                           Text="{DynamicResource Loc_Del_Hint}"
                            TextWrapping="Wrap" />
             </StackPanel>
         </StackPanel>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-            <Button Content="确定" IsDefault="True" Click="OnOk" />
-            <Button Content="取消" IsCancel="True" Click="OnCancel" />
+            <Button Classes="secondary" Content="{DynamicResource Loc_Btn_Cancel}" IsCancel="True" Click="OnCancel" />
+            <Button Classes="danger" Content="{DynamicResource Loc_Btn_Delete}" IsDefault="True" Click="OnOk" />
         </StackPanel>
     </StackPanel>
 </Window>

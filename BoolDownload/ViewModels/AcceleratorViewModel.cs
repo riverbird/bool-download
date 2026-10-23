@@ -2,9 +2,11 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Input.Platform;
+using BoolDownload.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -37,31 +39,31 @@ public partial class AccelNode : ViewModelBase
 /// <summary>文件加速对话框的视图模型：按用户选择的加速类型与输入链接生成 4 种加速链接。</summary>
 public partial class AcceleratorViewModel : ViewModelBase
 {
-    public ObservableCollection<string> AccelTypes { get; } = new()
+    public List<string> AccelTypes { get; } = new()
     {
-        "Github加速",
-        "SourceForge加速",
+        Localization.T("Loc_Acc_Github"),
+        Localization.T("Loc_Acc_SourceForge"),
     };
 
-    [ObservableProperty] public partial string SelectedType { get; set; } = "Github加速";
+    [ObservableProperty] public partial int SelectedTypeIndex { get; set; }
 
     [ObservableProperty] public partial string InputUrl { get; set; } = string.Empty;
 
     public ObservableCollection<AccelNode> Nodes { get; } = new();
 
     // 4 个加速节点（标题取自 gh-proxy.com 的节点说明，域名取自其转换逻辑）。
-    private static readonly (string Title, string Domain)[] NodeDefs =
+    private static readonly (string TitleKey, string Domain)[] NodeDefs =
     {
-        ("cloudflare (v4) 主站加速，全球高速分发！国内优选和IPv6网络支持请使用优选服务器。", "gh-proxy.org"),
-        ("Cloudflare (v4)推荐 优选加速服务器，仅支持IPv4 网络智能解析。", "v4.gh-proxy.org"),
-        ("Cloudflare (v4/v6) 优选加速服务器，支持 IPv6/IPv4 网络智能解析。", "v6.gh-proxy.org"),
-        ("Fastly (v4) Fastly CDN 节点加速。", "cdn.gh-proxy.org"),
+        ("Loc_Acc_CfMain", "gh-proxy.org"),
+        ("Loc_Acc_CfV4", "v4.gh-proxy.org"),
+        ("Loc_Acc_CfV4V6", "v6.gh-proxy.org"),
+        ("Loc_Acc_Fastly", "cdn.gh-proxy.org"),
     };
 
     public AcceleratorViewModel()
     {
         foreach (var def in NodeDefs)
-            Nodes.Add(new AccelNode { Title = def.Title });
+            Nodes.Add(new AccelNode { Title = Localization.T(def.TitleKey) });
     }
 
     [RelayCommand]
@@ -82,7 +84,7 @@ public partial class AcceleratorViewModel : ViewModelBase
         if (!Uri.TryCreate(input, UriKind.Absolute, out _))
             return;
 
-        var isSourceForge = SelectedType == "SourceForge加速";
+        var isSourceForge = SelectedTypeIndex == 1;
         for (var i = 0; i < Nodes.Count; i++)
         {
             var domain = NodeDefs[i].Domain;

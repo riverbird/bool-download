@@ -5,186 +5,312 @@
              xmlns:vm="using:BoolDownload.ViewModels"
              xmlns:ic="using:FluentIcons.Avalonia"
              mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="600"
-             NavigationPage.HasBackButton="False"
+             NavigationPage.HasNavigationBar="False"
              x:Name="Root"
              x:DataType="vm:DownloadViewModel"
              x:Class="BoolDownload.Views.DownloadView">
-    <ContentPage.Header>
-        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-            <Image Source="/Assets/Icon.png" Width="20" Height="20" VerticalAlignment="Center" />
-            <TextBlock Text="BoolDownload"
-                       FontSize="18"
-                       FontWeight="SemiBold"
-                       VerticalAlignment="Center" />
-        </StackPanel>
-    </ContentPage.Header>
     <Design.DataContext>
         <vm:DownloadViewModel />
     </Design.DataContext>
 
-    <DockPanel>
+    <ContentPage.Styles>
+        <!-- 左侧导航列表：Windows 11 NavigationView 风格 -->
+        <Style Selector="ListBox.navlist">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="5,0" />
+            <Setter Property="SelectionMode" Value="AlwaysSelected" />
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+        </Style>
+        <Style Selector="ListBox.navlist ListBoxItem">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Height" Value="40" />
+            <Setter Property="Margin" Value="0,2" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="ListBox.navlist ListBoxItem /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="ListBox.navlist ListBoxItem:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource NavItemHoverBrush}" />
+        </Style>
+        <Style Selector="ListBox.navlist ListBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource NavItemSelectedBrush}" />
+        </Style>
+        <Style Selector="ListBox.navlist ListBoxItem:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource ControlPressedBrush}" />
+        </Style>
+
+        <!-- 选中时显示左侧强调色指示条 -->
+        <Style Selector="ListBox.navlist ListBoxItem Border.SelectionIndicator">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="ListBox.navlist ListBoxItem:selected Border.SelectionIndicator">
+            <Setter Property="IsVisible" Value="True" />
+        </Style>
+    </ContentPage.Styles>
+
+    <DockPanel Background="{DynamicResource PageBackgroundBrush}">
         <!-- 顶部菜单栏 -->
-        <Menu DockPanel.Dock="Top">
-            <MenuItem Header="文件">
-                <MenuItem Header="新建下载..." Command="{Binding NewDownloadCommand}" />
-                <MenuItem Header="新建磁力链接下载..." Command="{Binding NewMagnetLinkCommand}" />
-                <MenuItem Header="打开BT种子..." Command="{Binding NewTorrentCommand}" />
+        <Menu DockPanel.Dock="Top" Background="Transparent">
+            <MenuItem Header="{DynamicResource Loc_Menu_File}">
+                <MenuItem Header="{DynamicResource Loc_Menu_NewDownload}" Command="{Binding NewDownloadCommand}" />
+                <MenuItem Header="{DynamicResource Loc_Menu_NewMagnet}" Command="{Binding NewMagnetLinkCommand}" />
+                <MenuItem Header="{DynamicResource Loc_Menu_OpenTorrent}" Command="{Binding NewTorrentCommand}" />
                 <Separator />
-                <MenuItem Header="退出" Click="OnExit" />
+                <MenuItem Header="{DynamicResource Loc_Menu_Exit}" Click="OnExit" />
             </MenuItem>
-            <MenuItem Header="工具">
-                <MenuItem Header="外观切换" Command="{Binding ToggleThemeCommand}" />
-                <MenuItem Header="SourceForge/Github加速转换..." Click="OnAccelerator" />
+            <MenuItem Header="{DynamicResource Loc_Menu_Tools}">
+                <MenuItem Header="{DynamicResource Loc_Menu_Options}" Click="OnOptions" />
+                <MenuItem Header="{DynamicResource Loc_Menu_Accelerator}" Click="OnAccelerator" />
             </MenuItem>
-            <MenuItem Header="帮助">
-                <MenuItem Header="关于..." Click="OnAbout" />
-                <MenuItem Header="检查更新" Click="OnCheckUpdate" />
+            <MenuItem Header="{DynamicResource Loc_Menu_Help}">
+                <MenuItem Header="{DynamicResource Loc_Menu_About}" Click="OnAbout" />
+                <MenuItem Header="{DynamicResource Loc_Menu_CheckUpdate}" Click="OnCheckUpdate" />
             </MenuItem>
         </Menu>
 
-        <!-- 左侧状态栏列表 -->
-        <ListBox DockPanel.Dock="Left"
-                 MinWidth="180"
-                 ItemsSource="{Binding StatusItems}"
-                 SelectedItem="{Binding SelectedStatus}"
-                 BorderThickness="0,0,1,0"
-                 BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}">
-            <ListBox.ItemTemplate>
-                <DataTemplate DataType="vm:StatusItem">
-                    <DockPanel Margin="16,8">
-                        <TextBlock DockPanel.Dock="Right"
-                                   Text="{Binding Count}"
-                                   Foreground="Gray"
-                                   VerticalAlignment="Center" />
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <ic:FluentIcon Icon="{Binding Icon}"
-                                           IconVariant="Regular"
-                                           FontSize="14"
-                                           VerticalAlignment="Center" />
-                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </DockPanel>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
-
         <!-- 底部状态栏 -->
         <Border DockPanel.Dock="Bottom"
-                Padding="8,3"
-BorderThickness="0,1,0,0"
-                 BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}">
-            <Grid ColumnDefinitions="Auto,1*,Auto">
+                Height="32"
+                Background="{DynamicResource SidebarBackgroundBrush}"
+                BorderBrush="{DynamicResource DividerBrush}"
+                BorderThickness="0,1,0,0">
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="18,0">
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6">
-                    <ic:FluentIcon Icon="ArrowUp" IconVariant="Regular" FontSize="14" VerticalAlignment="Center" />
-                    <TextBlock Text="{Binding UploadSpeed}" VerticalAlignment="Center" />
+                    <ic:FluentIcon Icon="ArrowUp"
+                                   IconVariant="Regular"
+                                   FontSize="14"
+                                   Foreground="{DynamicResource MutedTextBrush}"
+                                   VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding UploadSpeed}"
+                               FontSize="12"
+                               Foreground="{DynamicResource MutedTextBrush}"
+                               VerticalAlignment="Center" />
                 </StackPanel>
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6">
-                    <ic:FluentIcon Icon="ArrowDown" IconVariant="Regular" FontSize="14" VerticalAlignment="Center" />
-                    <TextBlock Text="{Binding DownloadSpeed}" VerticalAlignment="Center" />
+                    <ic:FluentIcon Icon="ArrowDown"
+                                   IconVariant="Regular"
+                                   FontSize="14"
+                                   Foreground="{DynamicResource MutedTextBrush}"
+                                   VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding DownloadSpeed}"
+                               FontSize="12"
+                               Foreground="{DynamicResource MutedTextBrush}"
+                               VerticalAlignment="Center" />
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- 右侧区域 -->
-        <Grid RowDefinitions="Auto,*">
-            <!-- 工具栏 -->
-            <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="4" Margin="8">
-                <Button Command="{Binding NewDownloadCommand}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <ic:FluentIcon Icon="Add" IconVariant="Regular" FontSize="14" VerticalAlignment="Center" />
-                        <TextBlock Text="新建下载" VerticalAlignment="Center" />
+        <Grid ColumnDefinitions="240,*">
+            <!-- 左侧导航栏：pane header + 导航列表 -->
+            <Border Grid.Column="0"
+                    Background="{DynamicResource SidebarBackgroundBrush}"
+                    BorderBrush="{DynamicResource DividerBrush}"
+                    BorderThickness="0,0,1,0">
+                <Grid RowDefinitions="Auto,*">
+                    <!-- Pane header -->
+                    <StackPanel Grid.Row="0" Margin="16,20,16,12" Spacing="2">
+                        <TextBlock Text="{DynamicResource Loc_Pane_Title}" FontSize="16" FontWeight="SemiBold" />
+                        <TextBlock Text="{DynamicResource Loc_Pane_Subtitle}"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource MutedTextBrush}" />
                     </StackPanel>
-                </Button>
-                <Button Command="{Binding NewMagnetLinkCommand}"
-                        ToolTip.Tip="新建磁力链接下载">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <ic:FluentIcon Icon="Link" IconVariant="Regular" FontSize="14" VerticalAlignment="Center" />
-                        <TextBlock Text="磁力链接" VerticalAlignment="Center" />
-                    </StackPanel>
-                </Button>
-                <Button Command="{Binding NewTorrentCommand}"
-                        ToolTip.Tip="打开BT种子下载">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <ic:FluentIcon Icon="Document" IconVariant="Regular" FontSize="14" VerticalAlignment="Center" />
-                        <TextBlock Text="BT下载" VerticalAlignment="Center" />
-                    </StackPanel>
-                </Button>
-                <Separator Width="1" Height="24" Margin="8,0" VerticalAlignment="Center" />
-                <Button Command="{Binding StartCommand}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <ic:FluentIcon Icon="Play" IconVariant="Regular" FontSize="14" VerticalAlignment="Center" />
-                        <TextBlock Text="开始" VerticalAlignment="Center" />
-                    </StackPanel>
-                </Button>
-                <Button Command="{Binding PauseCommand}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <ic:FluentIcon Icon="Pause" IconVariant="Regular" FontSize="14" VerticalAlignment="Center" />
-                        <TextBlock Text="暂停" VerticalAlignment="Center" />
-                    </StackPanel>
-                </Button>
-                <Button Command="{Binding DeleteCommand}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <ic:FluentIcon Icon="Delete" IconVariant="Regular" FontSize="14" VerticalAlignment="Center" />
-                        <TextBlock Text="删除" VerticalAlignment="Center" />
-                    </StackPanel>
-                </Button>
-                <Separator Width="1" Height="24" Margin="8,0" VerticalAlignment="Center" />
-                <Button Command="{Binding PropertiesCommand}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <ic:FluentIcon Icon="Settings" IconVariant="Regular" FontSize="14" VerticalAlignment="Center" />
-                        <TextBlock Text="属性" VerticalAlignment="Center" />
-                    </StackPanel>
-                </Button>
-            </StackPanel>
 
-            <!-- 下载列表表格 -->
-            <DataGrid Grid.Row="1"
-                      ItemsSource="{Binding FilteredItems}"
-                      SelectedItem="{Binding SelectedItem}"
-                      AutoGenerateColumns="False"
-                      IsReadOnly="True"
-                      CanUserSortColumns="True"
-                      SelectionMode="Single"
-                      RowHeight="40"
-CellPointerPressed="OnCellsPointerPressed"
-                       VerticalScrollBarVisibility="Visible">
-                <DataGrid.ContextFlyout>
-                    <MenuFlyout>
-                        <MenuItem Header="删除" Command="{Binding MoveToTrashCommand}" />
-                        <MenuItem Header="删除条目及文件" Command="{Binding DeleteCommand}" />
-                        <Separator />
-                        <MenuItem Header="打开文件" Command="{Binding OpenFileCommand}" />
-                        <MenuItem Header="打开保存文件夹" Command="{Binding OpenSaveFolderCommand}" />
-                        <Separator />
-                        <MenuItem Header="开始" Command="{Binding StartCommand}" />
-                        <MenuItem Header="暂停" Command="{Binding PauseCommand}" />
-                        <Separator />
-                        <MenuItem Header="复制下载链接" Command="{Binding CopyLinkCommand}" />
-                        <MenuItem Header="属性" Command="{Binding PropertiesCommand}" />
-                    </MenuFlyout>
-                </DataGrid.ContextFlyout>
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="状态" Binding="{Binding Status}" Width="100" />
-                    <DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="*" />
-                    <DataGridTextColumn Header="完成" Binding="{Binding Done}" Width="120" />
-                    <DataGridTextColumn Header="大小" Binding="{Binding Size}" Width="120" />
-                    <DataGridTemplateColumn Header="进度(%)" Width="200">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate DataType="vm:DownloadItem">
-                                <Grid ColumnDefinitions="*,Auto" Margin="8,0" VerticalAlignment="Center" ColumnSpacing="8">
-                                    <ProgressBar Grid.Column="0"
-                                                 Minimum="0"
-                                                 Maximum="100"
-                                                 Value="{Binding Progress}" />
-                                    <TextBlock Grid.Column="1"
-                                               Text="{Binding Progress, StringFormat={}{0:0.#}%}" />
+                    <ListBox Grid.Row="1"
+                             x:Name="StatusList"
+                             Classes="navlist"
+                             ItemsSource="{Binding StatusItems}"
+                             SelectedItem="{Binding SelectedStatus}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="vm:StatusItem">
+                                <Grid ColumnDefinitions="3,Auto,*,Auto"
+                                      Margin="4,0"
+                                      AutomationProperties.Name="{Binding DisplayName}">
+                                    <Border Grid.Column="0"
+                                            Classes="SelectionIndicator"
+                                            Width="3"
+                                            Height="16"
+                                            CornerRadius="1.5"
+                                            Background="{StaticResource AccentBrush}"
+                                            VerticalAlignment="Center" />
+                                    <ic:FluentIcon Grid.Column="1"
+                                                   Icon="{Binding Icon}"
+                                                   IconVariant="Regular"
+                                                   IconSize="Size20"
+                                                   Width="20"
+                                                   Height="20"
+                                                   Margin="13,0,13,0"
+                                                   VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="2"
+                                               Text="{Binding DisplayName}"
+                                               FontSize="14"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="3"
+                                               Text="{Binding Count}"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource MutedTextBrush}"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,4,0" />
                                 </Grid>
                             </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="添加时间" Binding="{Binding AddedTime, StringFormat={}{0:MM-dd HH:mm}}" Width="140" />
-                </DataGrid.Columns>
-            </DataGrid>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+
+            <!-- 右侧内容区域 -->
+            <Grid Grid.Column="1" RowDefinitions="Auto,*">
+                <!-- 工具栏：Windows 11 命令栏 -->
+                <Border Grid.Row="0" Padding="24,12,24,4" Background="Transparent">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <Button Classes="accent"
+                                Command="{Binding NewDownloadCommand}"
+                                AutomationProperties.Name="{DynamicResource Loc_Tb_NewDownload}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <ic:FluentIcon Icon="Add"
+                                               IconVariant="Regular"
+                                               FontSize="14"
+                                               Foreground="White"
+                                               VerticalAlignment="Center" />
+                                <TextBlock Text="{DynamicResource Loc_Tb_NewDownload}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Classes="tool"
+                                Command="{Binding NewMagnetLinkCommand}"
+                                AutomationProperties.Name="{DynamicResource Loc_Tb_Magnet}"
+                                ToolTip.Tip="{DynamicResource Loc_Tip_NewMagnet}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <ic:FluentIcon Icon="Link" IconVariant="Regular" FontSize="15" VerticalAlignment="Center" />
+                                <TextBlock Text="{DynamicResource Loc_Tb_Magnet}" FontSize="13" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Classes="tool"
+                                Command="{Binding NewTorrentCommand}"
+                                AutomationProperties.Name="{DynamicResource Loc_Tb_Torrent}"
+                                ToolTip.Tip="{DynamicResource Loc_Tip_NewTorrent}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <ic:FluentIcon Icon="Document" IconVariant="Regular" FontSize="15" VerticalAlignment="Center" />
+                                <TextBlock Text="{DynamicResource Loc_Tb_Torrent}" FontSize="13" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Border Width="1"
+                                Height="20"
+                                Margin="8,0"
+                                Background="{DynamicResource DividerBrush}"
+                                VerticalAlignment="Center" />
+                        <Button Classes="tool"
+                                Command="{Binding StartCommand}"
+                                AutomationProperties.Name="{DynamicResource Loc_Tb_Start}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <ic:FluentIcon Icon="Play" IconVariant="Regular" FontSize="15" VerticalAlignment="Center" />
+                                <TextBlock Text="{DynamicResource Loc_Tb_Start}" FontSize="13" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Classes="tool"
+                                Command="{Binding PauseCommand}"
+                                AutomationProperties.Name="{DynamicResource Loc_Tb_Pause}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <ic:FluentIcon Icon="Pause" IconVariant="Regular" FontSize="15" VerticalAlignment="Center" />
+                                <TextBlock Text="{DynamicResource Loc_Tb_Pause}" FontSize="13" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Classes="tool"
+                                Command="{Binding DeleteCommand}"
+                                AutomationProperties.Name="{DynamicResource Loc_Tb_Delete}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <ic:FluentIcon Icon="Delete" IconVariant="Regular" FontSize="15" VerticalAlignment="Center" />
+                                <TextBlock Text="{DynamicResource Loc_Tb_Delete}" FontSize="13" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Border Width="1"
+                                Height="20"
+                                Margin="8,0"
+                                Background="{DynamicResource DividerBrush}"
+                                VerticalAlignment="Center" />
+                        <Button Classes="tool"
+                                Command="{Binding PropertiesCommand}"
+                                AutomationProperties.Name="{DynamicResource Loc_Tb_Properties}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <ic:FluentIcon Icon="Settings" IconVariant="Regular" FontSize="15" VerticalAlignment="Center" />
+                                <TextBlock Text="{DynamicResource Loc_Tb_Properties}" FontSize="13" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <!-- 下载列表：Windows 11 卡片容器 -->
+                <Border Grid.Row="1"
+                        Margin="24,12,24,24"
+                        CornerRadius="8"
+                        Background="{DynamicResource CardBackgroundBrush}"
+                        BorderBrush="{DynamicResource DividerBrush}"
+                        BorderThickness="1"
+                        ClipToBounds="True">
+                    <DataGrid x:Name="DownloadGrid"
+                              ItemsSource="{Binding FilteredItems}"
+                              SelectedItem="{Binding SelectedItem}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              CanUserSortColumns="True"
+                              SelectionMode="Single"
+                              RowHeight="40"
+                              ColumnHeaderHeight="36"
+                              Background="Transparent"
+                              BorderThickness="0"
+                              GridLinesVisibility="Horizontal"
+                              HorizontalGridLinesBrush="{DynamicResource DividerBrush}"
+                              CellPointerPressed="OnCellsPointerPressed"
+                              VerticalScrollBarVisibility="Visible">
+                        <DataGrid.ContextFlyout>
+                            <MenuFlyout>
+                                <MenuItem Header="{DynamicResource Loc_Tb_Delete}" Command="{Binding MoveToTrashCommand}" />
+                                <MenuItem Header="{DynamicResource Loc_Ctx_DeleteAndFiles}" Command="{Binding DeleteCommand}" />
+                                <Separator />
+                                <MenuItem Header="{DynamicResource Loc_Ctx_OpenFile}" Command="{Binding OpenFileCommand}" />
+                                <MenuItem Header="{DynamicResource Loc_Ctx_OpenFolder}" Command="{Binding OpenSaveFolderCommand}" />
+                                <Separator />
+                                <MenuItem Header="{DynamicResource Loc_Tb_Start}" Command="{Binding StartCommand}" />
+                                <MenuItem Header="{DynamicResource Loc_Tb_Pause}" Command="{Binding PauseCommand}" />
+                                <MenuItem Header="{DynamicResource Loc_Ctx_Redownload}" Command="{Binding RedownloadCommand}" />
+                                <Separator />
+                                <MenuItem Header="{DynamicResource Loc_Ctx_CopyLink}" Command="{Binding CopyLinkCommand}" />
+                                <MenuItem Header="{DynamicResource Loc_Tb_Properties}" Command="{Binding PropertiesCommand}" />
+                            </MenuFlyout>
+                        </DataGrid.ContextFlyout>
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="{DynamicResource Loc_Col_Status}" Binding="{Binding StatusLabel}" Width="110" />
+                            <DataGridTextColumn Header="{DynamicResource Loc_Col_Name}" Binding="{Binding Name}" Width="*" />
+                            <DataGridTextColumn Header="{DynamicResource Loc_Col_Done}" Binding="{Binding Done}" Width="100" />
+                            <DataGridTextColumn Header="{DynamicResource Loc_Col_Size}" Binding="{Binding Size}" Width="100" />
+                            <DataGridTemplateColumn Header="{DynamicResource Loc_Col_Progress}" Width="180">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="vm:DownloadItem">
+                                        <Grid ColumnDefinitions="*,Auto" Margin="12,0" VerticalAlignment="Center" ColumnSpacing="8">
+                                            <ProgressBar Grid.Column="0"
+                                                         Minimum="0"
+                                                         Maximum="100"
+                                                         Value="{Binding Progress}" />
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding Progress, StringFormat={}{0:0.#}%}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="{DynamicResource Loc_Col_Speed}"
+                                                Binding="{Binding Speed}"
+                                                Width="110"
+                                                IsVisible="False" />
+                            <DataGridTextColumn Header="{DynamicResource Loc_Col_AddedTime}" Binding="{Binding AddedTime, StringFormat={}{0:MM-dd HH:mm}}" Width="130" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Border>
+            </Grid>
         </Grid>
     </DockPanel>
 </ContentPage>

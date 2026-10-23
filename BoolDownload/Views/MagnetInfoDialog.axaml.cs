@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using BoolDownload.Services;
 using BoolDownload.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -45,7 +46,7 @@ public partial class MagnetInfoDialog : Window
             folders = await topLevel.StorageProvider.OpenFolderPickerAsync(
                 new FolderPickerOpenOptions
                 {
-                    Title = "选择保存位置",
+                    Title = Localization.T("Loc_Tip_ChooseSavePath"),
                     AllowMultiple = false,
                 });
         }
